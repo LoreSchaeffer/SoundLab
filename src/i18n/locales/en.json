@@ -51,10 +51,14 @@
     "wave_type_label": "Wave Type:",
     "amplitude_label": "Amplitude:",
     "low_volume": "Quiet",
-    "high_volume": "Loud"
+    "high_volume": "Loud",
+    "tempo_label": "Tempo:",
+    "fast": "Fast",
+    "slow": "Slow"
   },
   "aria": {
     "delete_oscillator": "Delete Oscillator",
-    "add_oscillator": "Add Oscillator"
+    "add_oscillator": "Add Oscillator",
+    "add_sequence": "Add Sequence"
   }
 }

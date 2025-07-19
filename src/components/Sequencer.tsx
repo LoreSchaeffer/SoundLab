@@ -1,5 +1,5 @@
 import styles from './Sequencer.module.css';
-import {type Dispatch, forwardRef, Fragment, type RefObject, type SetStateAction, useEffect, useImperativeHandle, useRef, useState} from "react";
+import {type Dispatch, forwardRef, Fragment, type RefObject, type SetStateAction, useEffect, useImperativeHandle, useRef, useState, MouseEvent} from "react";
 import {useTranslation} from "react-i18next";
 import {type Color, colors} from "../utils/colors.ts";
 import {Button, ButtonGroup, Card, Form} from "react-bootstrap";
@@ -8,6 +8,7 @@ import {debounce} from "lodash";
 import {PolySynth} from "tone";
 import * as Tone from "tone";
 import {type Note, notes, sameNote} from "../utils/music.ts";
+import {ImageButton} from "./ImageButton.tsx";
 
 export type SequencerProps = {
     number: number;
@@ -16,6 +17,7 @@ export type SequencerProps = {
     onPlay?: () => void;
     onStop?: () => void;
     onDelete?: () => void;
+    onChange?: (waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>) => void;
 }
 
 export type SequencerRef = {
@@ -23,6 +25,9 @@ export type SequencerRef = {
     play: () => void;
     stop: () => void;
     changeTempo: (tempo: number) => void;
+    setExternalManaged: (isManaged: boolean) => void;
+    setData: (waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>) => void;
+    getData: () => {waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>};
 }
 
 export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
@@ -33,7 +38,8 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             color = colors.blue,
             onPlay,
             onStop,
-            onDelete
+            onDelete,
+            onChange
         } = props;
 
         const {t} = useTranslation();
@@ -45,6 +51,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         const [cols, setCols] = useState(16);
         const [sequence, setSequence] = useState<Record<number, Note[]>>({});
         const [selectedCol, setSelectedCol] = useState<number | null>(null);
+        const [isManaged, setIsManaged] = useState(false);
 
         const synthRef = useRef<PolySynth | null>(null);
         const loopIdRef = useRef<number | null>(null);
@@ -82,6 +89,11 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         useEffect(() => {
             sequenceRef.current = sequence;
         }, [sequence]);
+
+        useEffect(() => {
+            if (!onChange || Object.keys(sequence).length === 0) return;
+            onChange(waveform, amplitude, cols, sequence);
+        }, [onChange, waveform, amplitude, cols, sequence])
 
         const getStepDuration = (bpm: number) => 60 / bpm / 4;
 
@@ -129,10 +141,6 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             }
             setSelectedCol(null);
         };
-
-        const updateWaveform = (type: WaveformType) => {
-            setWaveform(type);
-        }
 
         const handleMouseEnterCell = (e: MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
             if (e.target.classList.contains(styles.cellDisabled)) return;
@@ -185,7 +193,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             e.target.style.color = '';
         };
 
-        const handleHeaderClick = (e: MouseEvent<HTMLDivElement>, idx: number) => {
+        const handleHeaderClick = (idx: number) => {
             if (idx === cols) {
                 setCols(prev => prev + 1);
             } else {
@@ -214,11 +222,31 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             changeTempo: (newTempo: number) => {
                 const safeTempo = Math.max(1, Math.min(newTempo, 200));
                 setCurrentTempo(safeTempo);
-                Tone.getContext().bpm.value = safeTempo;
+                // TODO Change tempo
+            },
+            setExternalManaged: (isManaged: boolean) => setIsManaged(isManaged),
+            getData: () => ({
+                waveform,
+                amplitude,
+                cols,
+                sequence
+            }),
+            setData: (newWaveform: WaveformType, newAmplitude: number, newCols: number, newSequence: Record<number, Note[]>) => {
+                setWaveform(newWaveform);
+                setAmplitude(newAmplitude);
+                setCols(newCols);
+                setSequence(newSequence);
+
+                if (synthRef.current) {
+                    synthRef.current.set({
+                        oscillator: {type: newWaveform},
+                        volume: Tone.gainToDb(newAmplitude)
+                    });
+                }
             }
         }));
 
-        const colHeaders = Array.from({length: cols}, (_, i) => i + 1);
+        const colHeaders = Array.from({length: cols}, (_, i) => '' + (i + 1));
         colHeaders.push('+');
 
         return (
@@ -236,7 +264,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                 <Button
                                     key={type}
                                     variant={waveform === type ? 'primary' : 'outline-primary'}
-                                    onClick={() => updateWaveform(type)}
+                                    onClick={() => setWaveform(type)}
                                     className={styles.formBtn + ' flex-grow-1 mb-2 btn-sm'}
                                     size={'lg'}
                                 >
@@ -262,13 +290,13 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                         </div>
                     </div>
 
-                    <div onClick={isPlaying ? handleStop : handlePlay}>
-                        <img
-                            className={styles.playBtn}
-                            src={isPlaying ? '/images/icons/stop.png' : '/images/icons/play.png'}
-                            alt={isPlaying ? t('stop') : t('play')} onClick={isPlaying ? handleStop : handlePlay}
-                        />
-                    </div>
+                    <ImageButton
+                        src={`/images/icons/${isPlaying ? 'stop' : 'play'}.png`}
+                        alt={isPlaying ? 'Play' : 'Stop'}
+                        onclick={isPlaying ? handleStop : handlePlay}
+                        disabled={isManaged}
+                        className={styles.playBtn}
+                    />
 
                     {onDelete && (
                         <button className={styles.closeBtn} onClick={onDelete} aria-label={t('delete_oscillator')} style={{color: color.text}}>
@@ -288,7 +316,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                     style={{borderColor: color.border}}
                                     onMouseEnter={handleMouseEnterHeader}
                                     onMouseLeave={handleMouseLeaveHeader}
-                                    onClick={(e) => handleHeaderClick(e, colIdx)}
+                                    onClick={() => handleHeaderClick(colIdx)}
                                 >
                                     {col}
                                 </div>

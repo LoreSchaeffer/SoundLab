@@ -1,8 +1,39 @@
 .player {
     display: flex;
-    flex-direction: row;
+    gap: 0.5em;
     align-items: center;
     border-radius: 8px;
     border: 1px solid var(--blue-100);
     background-color: var(--blue-50);
+}
+
+.tempoContainer {
+    min-width: 300px;
+    margin-right: 1em;
+}
+
+.tempoContainer div {
+    width: 100%;
+}
+
+.statusBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.playBtn {
+    margin-left: auto;
+}
+
+.addBtn {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 1000;
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
