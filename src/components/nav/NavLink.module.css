@@ -1,0 +1,29 @@
+.navLink {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.navLink img {
+    width: auto;
+    height: 30px;
+    transition: transform 200ms ease;
+}
+
+.navLink {
+    color: var(--bs-white);
+    transition: all 300ms ease;
+}
+
+.navLink:hover {
+    transform: scale(1.1);
+    color: var(--bs-yellow);
+}
+
+.active {
+    color: var(--bs-primary-bg-subtle) !important;
+}
+
+.active:hover {
+    color: var(--bs-yellow) !important;
+}

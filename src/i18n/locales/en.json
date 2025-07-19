@@ -1,0 +1,60 @@
+{
+  "sound_lab": "Sound Lab",
+  "waveforms": {
+    "sine": "Sine",
+    "square": "Square",
+    "triangle": "Triangle",
+    "sawtooth": "Sawtooth",
+    "noise": "White Noise"
+  },
+  "notes": {
+    "c": "C",
+    "d": "D",
+    "e": "E",
+    "f": "F",
+    "g": "G",
+    "a": "A",
+    "b": "B"
+  },
+  "navigation": {
+    "home": "Home",
+    "playground": "Wave Playground",
+    "mixer": "Wave Mixer",
+    "sequencer": "Sequencer",
+    "about": "About"
+  },
+  "playground": {
+    "title": "Wave Playground",
+    "description": "Explore different sound waves! Choose a wace type, adjust the frequency and volume, then press play to hear the sound!",
+    "visualizer_title": "Waveform Visualizer",
+    "controls_title": "Controls",
+    "controls": {
+      "wave_type_label": "Wave Type:",
+      "frequency_label": "Frequency:",
+      "low_pitch": "Low Pitch",
+      "high_pitch": "High Pitch",
+      "common_notes": "Common Notes:",
+      "amplitude_label": "Amplitude:",
+      "low_volume": "Quiet",
+      "high_volume": "Loud"
+    }
+  },
+  "mixer": {
+    "title": "Wave Mixer",
+    "description": "Mix up multiple sound waves! Turn oscillators on/off and adjust their settings to create complex sounds!",
+    "oscillator_title": "Wave"
+  },
+  "sequencer": {
+    "title": "Sequencer",
+    "description": "Create rhythmic patterns! Add oscillators, set their frequency and amplitude, and arrange them in a sequence to play back your sound!",
+    "sequence_title": "Sequence",
+    "wave_type_label": "Wave Type:",
+    "amplitude_label": "Amplitude:",
+    "low_volume": "Quiet",
+    "high_volume": "Loud"
+  },
+  "aria": {
+    "delete_oscillator": "Delete Oscillator",
+    "add_oscillator": "Add Oscillator"
+  }
+}

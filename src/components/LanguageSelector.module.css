@@ -1,0 +1,32 @@
+.flag {
+    height: 15px;
+    width: auto;
+}
+
+.dropdownToggle {
+    border: none;
+    outline: none;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    transition: background-color 300ms ease;
+}
+
+.dropdownToggle:focus,
+.dropdownToggle:hover {
+    background-color: var(--gray-850);
+}
+
+.dropdownToggle:active {
+    background-color: var(--blue-900) !important;
+}
+
+.dropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dropdownFlag {
+    height: 20px;
+}

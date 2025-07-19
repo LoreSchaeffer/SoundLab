@@ -1,0 +1,10 @@
+{
+  "sound_lab": "Sound Lab",
+  "navigation": {
+    "home": "Home",
+    "playground": "Parcogiochi Onde",
+    "mixer": "Miscela Onde",
+    "sequencer": "Sequenziatore",
+    "about": "Informazioni"
+  }
+}

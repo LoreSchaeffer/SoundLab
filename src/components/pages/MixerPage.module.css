@@ -1,0 +1,28 @@
+.visualizer {
+    width: 100%;
+    height: 100%;
+    max-height: 50svh;
+    border: 2px solid var(--bs-primary);
+    border-radius: 8px;
+    display: block;
+}
+
+.addBtn {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 1000;
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.stopAll {
+    width: 50px;
+    height: 50px;
+    justify-self: flex-end;
+    margin-left: auto;
+    cursor: pointer;
+}
