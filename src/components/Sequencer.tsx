@@ -58,6 +58,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         const managedRef = useRef<boolean>(isManaged);
         const maxCols = useRef<number | null>(null);
         const synthRef = useRef<PolySynth>(null);
+        const previewSynthRef = useRef<PolySynth>(null);
         const partRef = useRef<Part>(null);
         const schedulesRef = useRef<number[]>([]);
 
@@ -76,12 +77,18 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                 volume: gainToDb(0.5)
             }).toDestination();
 
+            previewSynthRef.current = new PolySynth(Synth, {
+                oscillator: {type: 'sine'},
+                volume: gainToDb(0.5)
+            }).toDestination();
+
             return () => {
                 partRef.current?.stop();
                 partRef.current?.dispose();
 
                 Tone.getTransport().stop();
                 synthRef.current?.dispose();
+                previewSynthRef.current?.dispose();
             }
         }, []);
 
@@ -94,12 +101,19 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         }, [currentTempo]);
 
         useEffect(() => {
-            if (!synthRef.current) return;
+            if (synthRef.current) {
+                synthRef.current.set({
+                    oscillator: {type: waveform},
+                    volume: Tone.gainToDb(amplitude)
+                });
+            }
 
-            synthRef.current.set({
-                oscillator: {type: waveform},
-                volume: Tone.gainToDb(amplitude)
-            });
+            if (previewSynthRef.current) {
+                previewSynthRef.current.set({
+                    oscillator: {type: waveform},
+                    volume: Tone.gainToDb(amplitude)
+                });
+            }
         }, [waveform, amplitude]);
 
         useEffect(() => {
@@ -188,6 +202,10 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             setSelectedCol(null);
         };
 
+        const playNote = async (note: Note) => {
+            previewSynthRef.current?.triggerAttackRelease(noteToString(note), '8n');
+        }
+
         const handleMouseEnterCell = (e: React.MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
             const target = e.target as HTMLDivElement;
 
@@ -216,6 +234,9 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             const target = e.target as HTMLDivElement;
 
             if (target.classList.contains(styles.cellDisabled)) return;
+
+            playNote(note);
+
             setSequence(prev => {
                 const newSequence = {...prev};
                 const notes = [...(newSequence[idx] || [])];
@@ -339,7 +360,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                     </div>
 
                     <div className={styles.amplitudeContainer + ' d-flex flex-column align-items-center'}>
-                        <Form.Label className={'fw-bold'}>{t('sequencer.amplitude_label')}</Form.Label>
+                        <Form.Label className={'fw-bold'}>{`${t('sequencer.amplitude_label')} ${amplitude}`}</Form.Label>
                         <Form.Range
                             min={0}
                             max={1}

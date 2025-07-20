@@ -1,5 +1,7 @@
+export type ValidNotes = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g';
+
 export type Note = {
-    note: 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g';
+    note: ValidNotes;
     octave: number;
     alteration: '' | '♯' | '♭';
     frequency: number;
@@ -85,13 +87,18 @@ export function noteFromString(note: string): Note | null {
     const alteration = match[2] === '#' ? '♯' : (match[2] === 'b' ? '♭' : '');
     const octave = parseInt(match[3], 10);
 
-    if (!notes[`${noteName.toUpperCase()}${alteration}${octave}`]) return null;
+    const name = noteToString({note: noteName as ValidNotes, octave: octave, alteration: alteration, frequency: 0});
+
+    if (!notes[`${name}`]) {
+        console.warn(`Note ${note} not found in predefined notes.`);
+        return null;
+    }
 
     return {
         note: noteName as Note['note'],
         octave,
         alteration,
-        frequency: notes[`${noteName.toUpperCase()}${alteration}${octave}`].frequency
+        frequency: notes[`${name}`].frequency
     };
 }
 

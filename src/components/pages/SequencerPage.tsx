@@ -190,7 +190,7 @@ export function SequencerPage() {
 
                 <Row>
                     {sequencers.map((seq, index) =>
-                        <Col className={'col-12 col-lg-6 mb-3'} key={index}>
+                        <Col className={'col-12 mb-3'} key={index}>
                             <Sequencer
                                 ref={ref => {
                                     sequencersRef.current[index] = ref;
