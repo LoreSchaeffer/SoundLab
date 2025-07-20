@@ -7,19 +7,39 @@
     background-color: var(--blue-50);
 }
 
+.dropdownToggle {
+    background-color: transparent !important;
+    border: none;
+}
+
+.dropdownToggle img {
+    width: 30px;
+    height: 30px;
+    transition: transform 300ms ease;
+}
+
+.dropdownToggle:hover img {
+    transform: scale(1.1);
+}
+
+.dropdownToggle::after {
+    display: none;
+}
+
+.dropdownItem img {
+    width: 25px;
+    height: 25px;
+    margin-right: 0.4em;
+}
+
 .tempoContainer {
     min-width: 300px;
     margin-right: 1em;
+    margin-left: 1em;
 }
 
 .tempoContainer div {
     width: 100%;
-}
-
-.statusBtn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 .playBtn {

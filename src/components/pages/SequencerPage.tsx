@@ -1,7 +1,7 @@
 import styles from './SequencerPage.module.css';
 import {useTranslation} from "react-i18next";
 import {Sequencer, type SequencerRef} from "../Sequencer.tsx";
-import {Button, Col, Form, Row} from "react-bootstrap";
+import {Button, Col, Dropdown, Form, Row} from "react-bootstrap";
 import {ImageButton} from "../ImageButton.tsx";
 import {type Color, colors} from "../../utils/colors.ts";
 import {type Dispatch, type SetStateAction, useEffect, useRef, useState} from "react";
@@ -26,6 +26,10 @@ export function SequencerPage() {
             if (seq) seq.changeTempo(tempo);
         });
     }, [tempo, sequencersRef]);
+
+    useEffect(() => {
+        if (sequencers.length === 0) setSequencers([{name: 'seq1', color: colors.blue}]);
+    }, [sequencers]);
 
     const handlePlay = () => {
         if (sequencers.length === 0) return;
@@ -82,7 +86,11 @@ export function SequencerPage() {
     }
 
     const handleClear = () => {
-
+        handleStop();
+        setSequencers([]);
+        sequencersRef.current = [];
+        debouncedSetTempo(120, setTempo);
+        setIsPlaying(false);
     }
 
     return (
@@ -94,8 +102,21 @@ export function SequencerPage() {
                 </div>
                 <p>{t('sequencer.description')}</p>
             </div>
+
             <div>
                 <div className={`${styles.player} mb-4 p-2`}>
+                    <Dropdown>
+                        <Dropdown.Toggle className={styles.dropdownToggle}>
+                            <img src={'/images/icons/menu.png'} alt={t('sequencer.menu')}/>
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleClear}><img src={'/images/icons/clean.png'} alt="Clear" />Clear</Dropdown.Item>
+                            <Dropdown.Divider/>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleDownload}><img src={'/images/icons/download.png'} alt="Download" />Download</Dropdown.Item>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleUpload}><img src={'/images/icons/upload.png'} alt="Upload" />Upload</Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
+
                     <div className={styles.tempoContainer + ' d-flex flex-column align-items-center'}>
                         <Form.Label className={'fw-bold'}>{`${t('sequencer.tempo_label')} ${tempo} BPM`}</Form.Label>
                         <Form.Range
@@ -109,34 +130,6 @@ export function SequencerPage() {
                             <small>{t('sequencer.slow')}</small>
                             <small>{t('sequencer.fast')}</small>
                         </div>
-                    </div>
-
-                    <div className={styles.statusBtn}>
-                        <ImageButton
-                            src={'/images/icons/download.png'}
-                            alt={t('sequencer.download')}
-                            size={40}
-                            onClick={() => handleDownload()}
-                        />
-                        <span className={'fw-bold'}>Save</span>
-                    </div>
-                    <div className={styles.statusBtn}>
-                        <ImageButton
-                            src={'/images/icons/upload.png'}
-                            alt={t('sequencer.upload')}
-                            size={40}
-                            onClick={() => handleUpload()}
-                        />
-                        <span className={'fw-bold'}>Load</span>
-                    </div>
-                    <div className={styles.statusBtn}>
-                        <ImageButton
-                            src={'/images/icons/clean.png'}
-                            alt={t('sequencer.clean')}
-                            size={40}
-                            onClick={() => handleClear()}
-                        />
-                        <span className={'fw-bold'}>Clear</span>
                     </div>
 
                     <ImageButton
