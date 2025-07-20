@@ -1,8 +1,8 @@
 export type Color = {
-    header?: string;
-    text?: string;
-    border?: string;
-    line?: string;
+    header: string;
+    text: string;
+    border: string;
+    line: string;
 }
 
 export const colors: Record<string, Color> = {

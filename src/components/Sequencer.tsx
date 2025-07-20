@@ -1,34 +1,33 @@
 import styles from './Sequencer.module.css';
-import {type Dispatch, forwardRef, Fragment, type RefObject, type SetStateAction, useEffect, useImperativeHandle, useRef, useState, MouseEvent} from "react";
+import {type Dispatch, forwardRef, Fragment, type RefObject, type SetStateAction, useEffect, useImperativeHandle, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {type Color, colors} from "../utils/colors.ts";
 import {Button, ButtonGroup, Card, Form} from "react-bootstrap";
 import {type WaveformType, waveformTypes} from "../utils/waveform.ts";
 import {debounce} from "lodash";
-import {PolySynth} from "tone";
-import * as Tone from "tone";
-import {type Note, notes, sameNote} from "../utils/music.ts";
+import {PolySynth, Part, Synth, gainToDb} from "tone";
+import * as Tone from 'tone';
+import {type Note, notes, noteToString, sameNote} from "../utils/music.ts";
 import {ImageButton} from "./ImageButton.tsx";
+import * as React from "react";
 
 export type SequencerProps = {
     number: number;
     tempo: number;
     color?: Color;
-    onPlay?: () => void;
-    onStop?: () => void;
     onDelete?: () => void;
-    onChange?: (waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>) => void;
 }
 
 export type SequencerRef = {
     getColor: () => Color;
     play: () => void;
     stop: () => void;
-    changeTempo: (tempo: number) => void;
-    setExternalManaged: (isManaged: boolean) => void;
-    setData: (waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>) => void;
-    getData: () => {waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>};
+    changeTempo: (newTempo: number) => void;
+    getCols: () => number;
+    setMaxCols: (newMaxCols: number | null) => void;
 }
+
+const DURATION = '4n';
 
 export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
     (props, ref) => {
@@ -36,27 +35,35 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             number,
             tempo,
             color = colors.blue,
-            onPlay,
-            onStop,
-            onDelete,
-            onChange
+            onDelete
         } = props;
 
         const {t} = useTranslation();
 
         const [currentTempo, setCurrentTempo] = useState(Math.max(1, Math.min(tempo, 200)));
-        const [waveform, setWaveform] = useState(waveformTypes[0]);
+        const [waveform, setWaveform] = useState<WaveformType>(waveformTypes[0]);
         const [amplitude, setAmplitude] = useState(0.5);
         const [isPlaying, setIsPlaying] = useState(false);
         const [cols, setCols] = useState(16);
-        const [sequence, setSequence] = useState<Record<number, Note[]>>({});
+        const [sequence, setSequence] = useState<Record<number, Note[]>>({
+            0: [notes.F4, notes.F3],
+            1: [notes.F4],
+            2: [notes.C5],
+            3: [notes.F4],
+            4: [notes.Bb4],
+            5: [notes.F4],
+            6: [notes.A4],
+            7: [notes.F4],
+        });
         const [selectedCol, setSelectedCol] = useState<number | null>(null);
         const [isManaged, setIsManaged] = useState(false);
 
-        const synthRef = useRef<PolySynth | null>(null);
-        const loopIdRef = useRef<number | null>(null);
-        const stepIndexRef = useRef(0);
-        const sequenceRef = useRef(sequence);
+        const sequenceRef = useRef<Record<number, Note[]>>(sequence);
+        const managedRef = useRef<boolean>(isManaged);
+        const maxCols = useRef<number | null>(null);
+        const synthRef = useRef<PolySynth>(null);
+        const partRef = useRef<Part>(null);
+        const schedulesRef = useRef<number[]>([]);
 
         const debouncedSetAmplitude = useRef(
             debounce((value: number, isPlaying: boolean, synthRef: RefObject<PolySynth | null>, setAmplitude: Dispatch<SetStateAction<number>>) => {
@@ -68,102 +75,139 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         ).current;
 
         useEffect(() => {
-            const synth = new Tone.PolySynth(Tone.Synth, {
-                oscillator: {type: waveform},
-                volume: Tone.gainToDb(amplitude)
+            synthRef.current = new PolySynth(Synth, {
+                oscillator: {type: 'sine'},
+                volume: gainToDb(0.5)
             }).toDestination();
 
-            synthRef.current = synth;
-
             return () => {
-                synth.dispose();
-                synthRef.current = null;
-            };
-        }, [waveform, amplitude]);
+                partRef.current?.stop();
+                partRef.current?.dispose();
 
-        useEffect(() => {
-            if (isPlaying && onPlay) onPlay();
-            else if (!isPlaying && onStop) onStop();
-        }, [isPlaying, onPlay, onStop]);
+                Tone.getTransport().stop();
+                synthRef.current?.dispose();
+            }
+        }, []);
 
         useEffect(() => {
             sequenceRef.current = sequence;
         }, [sequence]);
 
         useEffect(() => {
-            if (!onChange || Object.keys(sequence).length === 0) return;
-            onChange(waveform, amplitude, cols, sequence);
-        }, [onChange, waveform, amplitude, cols, sequence])
+            Tone.getTransport().bpm.value = currentTempo;
+        }, [currentTempo]);
 
-        const getStepDuration = (bpm: number) => 60 / bpm / 4;
-
-        const startLoop = () => {
-            if (loopIdRef.current) clearInterval(loopIdRef.current);
-
-            const stepDuration = getStepDuration(currentTempo) * 1000;
-            stepIndexRef.current = 0;
-
-            loopIdRef.current = window.setInterval(() => {
-                const colIdx = stepIndexRef.current % cols;
-                const notes = sequenceRef.current[colIdx] || [];
-
-                if (synthRef.current) {
-                    synthRef.current.releaseAll();
-                }
-
-                if (notes.length > 0) {
-                    synthRef.current?.triggerAttackRelease(
-                        notes.map((n) => n.frequency),
-                        stepDuration / 1000
-                    );
-                }
-
-                setSelectedCol(colIdx);
-                stepIndexRef.current = (stepIndexRef.current + 1) % cols;
-            }, stepDuration);
-        };
-
-        const handlePlay = () => {
+        useEffect(() => {
             if (!synthRef.current) return;
-            Tone.start();
 
-            if (!isPlaying) {
-                setIsPlaying(true);
-                startLoop();
+            synthRef.current.set({
+                oscillator: {type: waveform},
+                volume: Tone.gainToDb(amplitude)
+            });
+        }, [waveform, amplitude]);
+
+        const startPlaying = () => {
+            setSelectedCol(null);
+
+            if (schedulesRef.current.length > 0) {
+                schedulesRef.current.forEach(id => Tone.getTransport().clear(id));
+                schedulesRef.current = [];
             }
+
+            partRef.current?.stop();
+            partRef.current?.dispose();
+            partRef.current = createPart();
+
+            Tone.getTransport().stop();
+            Tone.getTransport().position = 0;
+
+            partRef.current.start(0);
+            Tone.getTransport().start();
+
+            setIsPlaying(true);
+        }
+
+        const updateSelectedCol = () => {
+            setSelectedCol(prev => {
+                if (prev === null) return 0;
+                return (prev + 1) % cols;
+            });
+        }
+
+        const createPart = () => {
+            const events: [string, string[]][] = Object.entries(sequenceRef.current).map(([step, notes]) => [`0:${step}:0`, notes.map(noteToString)]);
+            const part = new Part((time: number, notes: string[]) => synthRef.current?.triggerAttackRelease(notes, DURATION, time, 0.6), events);
+
+            part.loop = false;
+            part.loopEnd = Tone.Time(DURATION).toSeconds() * (managedRef.current ? maxCols.current || cols : cols);
+
+            const thisLoopEnd = Tone.Time(DURATION).toSeconds() * cols;
+
+            schedulesRef.current.push(Tone.getTransport().scheduleOnce(startPlaying, part.loopEnd));
+            if (managedRef.current) schedulesRef.current.push(Tone.getTransport().scheduleOnce(() => setSelectedCol(null), thisLoopEnd));
+            schedulesRef.current.push(Tone.getTransport().scheduleRepeat(updateSelectedCol, DURATION, 0, thisLoopEnd));
+
+            return part;
+        }
+
+        const handlePlay = async () => {
+            if (isPlaying) return;
+            if (!synthRef.current) return;
+
+            await Tone.start();
+
+            startPlaying();
         };
 
         const handleStop = () => {
-            setIsPlaying(false);
-            if (loopIdRef.current) {
-                clearInterval(loopIdRef.current);
-                loopIdRef.current = null;
+            if (!isPlaying) return;
+
+            if (schedulesRef.current.length > 0) {
+                schedulesRef.current.forEach(id => Tone.getTransport().clear(id));
+                schedulesRef.current = [];
             }
+
+            if (partRef.current) {
+                partRef.current.stop();
+                partRef.current.dispose();
+                partRef.current = null;
+            }
+
+            synthRef.current?.releaseAll();
+            Tone.getTransport().stop();
+
+            setIsPlaying(false);
             setSelectedCol(null);
         };
 
-        const handleMouseEnterCell = (e: MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
-            if (e.target.classList.contains(styles.cellDisabled)) return;
+        const handleMouseEnterCell = (e: React.MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
+            const target = e.target as HTMLDivElement;
+
+            if (target.classList.contains(styles.cellDisabled)) return;
             const isActive = (sequence[idx] || []).some(n => sameNote(n, note));
             if (isActive) {
-                e.target.style.backgroundColor = color.border;
+                target.style.backgroundColor = color.border;
             } else {
-                e.target.style.backgroundColor = color.header;
+                target.style.backgroundColor = color.header;
             }
         };
 
-        const handleMouseLeaveCell = (e: MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
-            if (e.target.classList.contains(styles.cellDisabled)) return;
+        const handleMouseLeaveCell = (e: React.MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
+            const target = e.target as HTMLDivElement;
+
+            if (target.classList.contains(styles.cellDisabled)) return;
             const isActive = (sequence[idx] || []).some(n => sameNote(n, note));
             if (isActive) {
-                e.target.style.backgroundColor = color.line;
+                target.style.backgroundColor = color.line;
             } else {
-                e.target.style.backgroundColor = '';
+                target.style.backgroundColor = '';
             }
         };
 
-        const handleCellClick = (e: MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
-            if (e.target.classList.contains(styles.cellDisabled)) return;
+        const handleCellClick = (e: React.MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
+            const target = e.target as HTMLDivElement;
+
+            if (target.classList.contains(styles.cellDisabled)) return;
             setSequence(prev => {
                 const newSequence = {...prev};
                 const notes = [...(newSequence[idx] || [])];
@@ -183,14 +227,18 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             });
         };
 
-        const handleMouseEnterHeader = (e: MouseEvent<HTMLDivElement>) => {
-            e.target.style.backgroundColor = color.header;
-            e.target.style.color = color.text;
+        const handleMouseEnterHeader = (e: React.MouseEvent<HTMLDivElement>) => {
+            const target = e.target as HTMLDivElement;
+
+            target.style.backgroundColor = color.header;
+            target.style.color = color.text;
         };
 
-        const handleMouseLeaveHeader = (e: MouseEvent<HTMLDivElement>) => {
-            e.target.style.backgroundColor = '';
-            e.target.style.color = '';
+        const handleMouseLeaveHeader = (e: React.MouseEvent<HTMLDivElement>) => {
+            const target = e.target as HTMLDivElement;
+
+            target.style.backgroundColor = '';
+            target.style.color = '';
         };
 
         const handleHeaderClick = (idx: number) => {
@@ -217,33 +265,22 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
 
         useImperativeHandle(ref, () => ({
             getColor: () => color,
-            play: handlePlay,
-            stop: handleStop,
-            changeTempo: (newTempo: number) => {
-                const safeTempo = Math.max(1, Math.min(newTempo, 200));
-                setCurrentTempo(safeTempo);
-                // TODO Change tempo
+            play: () => {
+                managedRef.current = true;
+                setIsManaged(true);
+                handlePlay();
             },
-            setExternalManaged: (isManaged: boolean) => setIsManaged(isManaged),
-            getData: () => ({
-                waveform,
-                amplitude,
-                cols,
-                sequence
-            }),
-            setData: (newWaveform: WaveformType, newAmplitude: number, newCols: number, newSequence: Record<number, Note[]>) => {
-                setWaveform(newWaveform);
-                setAmplitude(newAmplitude);
-                setCols(newCols);
-                setSequence(newSequence);
-
-                if (synthRef.current) {
-                    synthRef.current.set({
-                        oscillator: {type: newWaveform},
-                        volume: Tone.gainToDb(newAmplitude)
-                    });
-                }
-            }
+            stop: () => {
+                managedRef.current = false;
+                setIsManaged(false);
+                handleStop();
+            },
+            changeTempo: (newTempo: number) => {
+                newTempo = Math.max(1, Math.min(newTempo, 200));
+                setCurrentTempo(newTempo);
+            },
+            getCols: () => cols,
+            setMaxCols: (newMaxCols: number | null) => maxCols.current = newMaxCols || null
         }));
 
         const colHeaders = Array.from({length: cols}, (_, i) => '' + (i + 1));
@@ -293,7 +330,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                     <ImageButton
                         src={`/images/icons/${isPlaying ? 'stop' : 'play'}.png`}
                         alt={isPlaying ? 'Play' : 'Stop'}
-                        onclick={isPlaying ? handleStop : handlePlay}
+                        onClick={isPlaying ? handleStop : handlePlay}
                         disabled={isManaged}
                         className={styles.playBtn}
                     />
@@ -322,19 +359,19 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                 </div>
                             ))}
 
-                            {notes.map((note, rowIdx) => (
+                            {Object.values(notes).map((note, rowIdx) => (
                                 <Fragment key={`row-${rowIdx}`}>
                                     <div
-                                        className={`${styles.rowHeader} ${note.alteration === '' ? styles.whiteRow : styles.blackRow} ${rowIdx === notes.length - 1 ? styles.lastRowHeader : ''}`}
+                                        className={`${styles.rowHeader} ${note.alteration === '' ? styles.whiteRow : styles.blackRow} ${rowIdx === Object.values(notes).length - 1 ? styles.lastRowHeader : ''}`}
                                         style={{borderColor: color.border}}
                                     >
                                         {t(`notes.${note.note}`) + `${note.alteration}${note.octave}`}
                                     </div>
 
-                                    {colHeaders.map((col, colIdx) => (
+                                    {colHeaders.map((_col, colIdx) => (
                                         <div
                                             key={`cell-${rowIdx}-${colIdx}`}
-                                            className={`${styles.cell} ${colIdx === 0 ? styles.firstColCell : ''} ${colIdx === colHeaders.length - 1 ? styles.cellDisabled : ''} ${selectedCol === colIdx ? styles.selectedCell : ''} ${rowIdx === notes.length - 1 ? styles.lastRowCell : ''}`}
+                                            className={`${styles.cell} ${colIdx === 0 ? styles.firstColCell : ''} ${colIdx === colHeaders.length - 1 ? styles.cellDisabled : ''} ${selectedCol === colIdx ? styles.selectedCell : ''} ${rowIdx === Object.values(notes).length - 1 ? styles.lastRowCell : ''}`}
                                             style={{
                                                 backgroundColor: (sequence[colIdx] || []).find(n => sameNote(note, n)) ? color.line : '',
                                             }}
@@ -346,12 +383,12 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                 </Fragment>
                             ))}
                         </div>
-                        {selectedCol &&
+                        {selectedCol !== null &&
                             <div
                                 className={styles.selector}
                                 style={{
                                     left: (50 + selectedCol * 25) + 'px',
-                                    height: ((notes.length + 1) * 15 + 4) + 'px',
+                                    height: ((Object.keys(notes).length + 1) * 15 + 4) + 'px',
                                     backgroundColor: color.header + '80',
                                     borderColor: color.line
                                 }}

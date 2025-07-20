@@ -115,7 +115,7 @@
 .selector {
     width: 26px;
     position: absolute;
-    z-index: 20;
+    z-index: 50;
     top: 0;
     border: 1px solid;
 }

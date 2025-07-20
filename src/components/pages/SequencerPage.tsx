@@ -6,131 +6,57 @@ import {ImageButton} from "../ImageButton.tsx";
 import {type Color, colors} from "../../utils/colors.ts";
 import {type Dispatch, type SetStateAction, useEffect, useRef, useState} from "react";
 import {debounce} from "lodash";
-import type {WaveformType} from "../../utils/waveform.ts";
-import type {Note} from "../../utils/music.ts";
-import {loadFromStorage, saveToStorage, type StorageData} from "../../utils/storage.ts";
 
 export function SequencerPage() {
     const {t} = useTranslation();
 
     const [sequencers, setSequencers] = useState<{ name: string, color: Color }[]>([{name: 'seq1', color: colors.blue}]);
-    const [tempo, setTempo] = useState(60);
+    const [tempo, setTempo] = useState(120);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [storageData, setStorageData] = useState<StorageData | null>(null);
 
-    const sequencerRefs = useRef<(SequencerRef | null)[]>([]);
+    const sequencersRef = useRef<(SequencerRef | null)[]>([]);
     const debouncedSetTempo = useRef(
         debounce((value: number, setTempo: Dispatch<SetStateAction<number>>) => {
             setTempo(value);
-            setStorageData(prev => {
-                if (!prev) return prev;
-                prev.tempo = value;
-                return {...prev};
-
-            })
         }, 1)
     ).current;
 
     useEffect(() => {
-        // const storedData = loadFromStorage();
-        // if (!storedData) return;
-        //
-        // setStorageData(storedData);
-        // setTempo(storedData.tempo);
-        // setSequencers(
-        //     storedData.sequencers.map(seq => ({
-        //         name: `seq${seq.index + 1}`,
-        //         color: seq.color,
-        //         index: seq.index
-        //     }))
-        // );
-    }, []);
-
-    useEffect(() => {
-        // if (!storageData) return;
-        // if (!sequencerRefs.current || sequencerRefs.current.length === 0) return;
-        // if (!sequencers || sequencers.length === 0) return;
-        //
-        // storageData.sequencers.forEach((seq, i) => {
-        //     const ref = sequencerRefs.current[i];
-        //     if (!ref) return;
-        //
-        //     ref.setData(seq.waveform, seq.amplitude, seq.cols, seq.sequence);
-        // });
-    }, [storageData, sequencers]);
-
-    useEffect(() => {
-        // if (storageData) {
-        //
-        //     saveToStorage({
-        //         tempo,
-        //         sequencers: sequencers.map((seq, i) => {
-        //             const ref = sequencerRefs.current[i];
-        //             let waveform, amplitude, cols, sequence;
-        //             if (ref && ref.getData) {
-        //                 ({waveform, amplitude, cols, sequence} = ref.getData());
-        //             }
-        //             return {
-        //                 index: i,
-        //                 color: seq.color,
-        //                 waveform,
-        //                 amplitude,
-        //                 cols,
-        //                 sequence
-        //             };
-        //         })
-        //     });
-        //     console.log('Saved sequencers to storage');
-        // }
-    }, [storageData, tempo, sequencers]);
+        sequencersRef.current.forEach((seq) => {
+            if (seq) seq.changeTempo(tempo);
+        });
+    }, [tempo, sequencersRef]);
 
     const handlePlay = () => {
         if (sequencers.length === 0) return;
 
-        sequencerRefs.current.forEach(seq => {
+        let maxCols = 0;
+        sequencersRef.current.forEach(seq => {
             if (!seq) return;
 
-            seq.play();
-            seq.setExternalManaged(true);
+            const cols = seq.getCols();
+            if (cols > maxCols) maxCols = cols;
         });
+
+        sequencersRef.current.forEach(seq => {
+            if (!seq) return;
+
+            seq.setMaxCols(maxCols);
+            seq.play();
+        });
+
         setIsPlaying(true);
     };
 
     const handleStop = () => {
-        sequencerRefs.current.forEach(seq => {
+        sequencersRef.current.forEach(seq => {
             if (!seq) return;
 
             seq.stop();
-            seq.setExternalManaged(false);
+            seq.setMaxCols(null);
         });
+
         setIsPlaying(false);
-    };
-
-    const handleSequencerChange = (index: number, waveform: WaveformType, amplitude: number, cols: number, sequence: Record<number, Note[]>) => {
-        setStorageData(prev => {
-            if (!prev) prev = {tempo, sequencers: []};
-
-            if (!prev.sequencers.find(s => s.index === index)) {
-                prev.sequencers.push({
-                    index,
-                    color: sequencers[index].color,
-                    waveform,
-                    amplitude,
-                    cols,
-                    sequence
-                });
-            } else {
-                const sequencer = prev.sequencers.find(s => s.index === index);
-                if (sequencer) {
-                    sequencer.waveform = waveform;
-                    sequencer.amplitude = amplitude;
-                    sequencer.cols = cols;
-                    sequencer.sequence = sequence;
-                }
-            }
-
-            return {...prev};
-        });
     };
 
     const addSequencer = () => {
@@ -144,7 +70,7 @@ export function SequencerPage() {
     const removeSequencer = (index: number) => {
         handleStop();
         setSequencers(sequencers.filter((_, i) => i !== index));
-        sequencerRefs.current[index] = null;
+        sequencersRef.current = sequencersRef.current.filter((_, i) => i !== index);
     }
 
     const handleDownload = () => {
@@ -156,14 +82,7 @@ export function SequencerPage() {
     }
 
     const handleClear = () => {
-        handleStop();
-        setSequencers([]);
-        sequencerRefs.current = [];
-        setTempo(60);
-        setTimeout(() => {
-            setSequencers([{name: 'seq1', color: colors.blue}]);
-            sequencerRefs.current = [null];
-        }, 0);
+
     }
 
     return (
@@ -232,13 +151,13 @@ export function SequencerPage() {
                     {sequencers.map((seq, index) =>
                         <Col className={'col-12 col-lg-6 mb-3'} key={index}>
                             <Sequencer
-                                ref={ref => sequencerRefs.current[index] = ref}
+                                ref={ref => {
+                                    sequencersRef.current[index] = ref;
+                                }}
                                 number={index + 1}
                                 color={seq.color}
-                                name={seq.name}
                                 tempo={tempo}
                                 onDelete={() => removeSequencer(index)}
-                                onChange={(waveform, amplitude, cols, sequence) => handleSequencerChange(index, waveform, amplitude, cols, sequence)}
                             />
                         </Col>
                     )}
