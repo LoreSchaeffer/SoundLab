@@ -7,15 +7,17 @@ import {type WaveformType, waveformTypes} from "../utils/waveform.ts";
 import {debounce} from "lodash";
 import {PolySynth, Part, Synth, gainToDb} from "tone";
 import * as Tone from 'tone';
-import {type Note, notes, noteToString, sameNote} from "../utils/music.ts";
+import {type Note, notes, noteToString, sameNote, sequenceFromString, sequenceToString} from "../utils/music.ts";
 import {ImageButton} from "./ImageButton.tsx";
 import * as React from "react";
+import type {SequencerData} from "../utils/storage.ts";
 
 export type SequencerProps = {
     number: number;
     tempo: number;
     color?: Color;
     onDelete?: () => void;
+    onChange?: (data: SequencerData) => void;
 }
 
 export type SequencerRef = {
@@ -25,6 +27,8 @@ export type SequencerRef = {
     changeTempo: (newTempo: number) => void;
     getCols: () => number;
     setMaxCols: (newMaxCols: number | null) => void;
+    exportData: () => SequencerData;
+    importData: (data: SequencerData) => void;
 }
 
 const DURATION = '4n';
@@ -35,7 +39,8 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             number,
             tempo,
             color = colors.blue,
-            onDelete
+            onDelete,
+            onChange
         } = props;
 
         const {t} = useTranslation();
@@ -45,16 +50,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         const [amplitude, setAmplitude] = useState(0.5);
         const [isPlaying, setIsPlaying] = useState(false);
         const [cols, setCols] = useState(16);
-        const [sequence, setSequence] = useState<Record<number, Note[]>>({
-            0: [notes.F4, notes.F3],
-            1: [notes.F4],
-            2: [notes.C5],
-            3: [notes.F4],
-            4: [notes.Bb4],
-            5: [notes.F4],
-            6: [notes.A4],
-            7: [notes.F4],
-        });
+        const [sequence, setSequence] = useState<Record<number, Note[]>>({});
         const [selectedCol, setSelectedCol] = useState<number | null>(null);
         const [isManaged, setIsManaged] = useState(false);
 
@@ -105,6 +101,18 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                 volume: Tone.gainToDb(amplitude)
             });
         }, [waveform, amplitude]);
+
+        useEffect(() => {
+            if (!onChange || Object.keys(sequence).length === 0) return;
+
+            onChange({
+                waveform: waveform,
+                amplitude: amplitude,
+                cols: cols,
+                sequence: sequenceToString(sequence)
+            });
+
+        }, [waveform, amplitude, cols, sequence, onChange]);
 
         const startPlaying = () => {
             setSelectedCol(null);
@@ -263,6 +271,23 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             }
         };
 
+        const exportData = (): SequencerData => {
+            return {
+                waveform: waveform,
+                amplitude: amplitude,
+                cols: cols,
+                sequence: sequenceToString(sequence)
+            }
+        }
+
+        const importData = (data: SequencerData) => {
+            setWaveform(data.waveform);
+            setAmplitude(data.amplitude);
+            setCols(data.cols);
+            setSequence(sequenceFromString(data.sequence));
+            setSelectedCol(null);
+        }
+
         useImperativeHandle(ref, () => ({
             getColor: () => color,
             play: () => {
@@ -280,7 +305,9 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                 setCurrentTempo(newTempo);
             },
             getCols: () => cols,
-            setMaxCols: (newMaxCols: number | null) => maxCols.current = newMaxCols || null
+            setMaxCols: (newMaxCols: number | null) => maxCols.current = newMaxCols || null,
+            exportData: exportData,
+            importData: importData
         }));
 
         const colHeaders = Array.from({length: cols}, (_, i) => '' + (i + 1));

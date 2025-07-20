@@ -76,3 +76,37 @@ export function noteToString(note: Note): string {
     const alteration = note.alteration !== '' ? note.alteration === '♯' ? '#' : 'b' : '';
     return `${note.note.toUpperCase()}${alteration}${note.octave}`;
 }
+
+export function noteFromString(note: string): Note | null {
+    const match = note.match(/^([A-Ga-g])([#b]?)(\d)$/);
+    if (!match) return null;
+
+    const noteName = match[1].toLowerCase();
+    const alteration = match[2] === '#' ? '♯' : (match[2] === 'b' ? '♭' : '');
+    const octave = parseInt(match[3], 10);
+
+    if (!notes[`${noteName.toUpperCase()}${alteration}${octave}`]) return null;
+
+    return {
+        note: noteName as Note['note'],
+        octave,
+        alteration,
+        frequency: notes[`${noteName.toUpperCase()}${alteration}${octave}`].frequency
+    };
+}
+
+export function sequenceToString(sequence: Record<number, Note[]>): Record<number, string[]> {
+    const result: Record<number, string[]> = {};
+    for (const [key, notesArray] of Object.entries(sequence)) {
+        result[parseInt(key)] = notesArray.map(note => noteToString(note));
+    }
+    return result;
+}
+
+export function sequenceFromString(sequence: Record<number, string[]>): Record<number, Note[]> {
+    const result: Record<number, Note[]> = {};
+    for (const [key, notesArray] of Object.entries(sequence)) {
+        result[parseInt(key)] = notesArray.map(noteStr => noteFromString(noteStr)).filter(note => note !== null) as Note[];
+    }
+    return result;
+}

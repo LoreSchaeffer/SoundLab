@@ -1,17 +1,21 @@
-import type {Note} from "./music.ts";
 import type {Color} from "./colors.ts";
 import type {WaveformType} from "./waveform.ts";
 
+export type SequencerData = {
+    waveform: WaveformType;
+    amplitude: number;
+    cols: number;
+    sequence: Record<number, string[]>;
+}
+
+export type FullSequencerData = SequencerData & {
+    index: number;
+    color: Color;
+}
+
 export type StorageData = {
     tempo: number;
-    sequencers: {
-        index: number;
-        color: Color;
-        waveform: WaveformType;
-        amplitude: number;
-        cols: number;
-        sequence: Record<number, Note[]>;
-    }[];
+    sequencers: FullSequencerData[];
 }
 
 export function saveToStorage(data: StorageData) {
@@ -55,22 +59,39 @@ export function downloadData(data: StorageData, filename: string = "sequencers.j
     URL.revokeObjectURL(url);
 }
 
-export function uploadData(file: File): Promise<StorageData | null> {
+export function uploadData(): Promise<StorageData | null> {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const data = JSON.parse(event.target?.result as string) as StorageData;
-                resolve(data);
-            } catch (e) {
-                console.error("Failed to parse uploaded data:", e);
-                reject(e);
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        input.onchange = () => {
+            const file = input.files?.[0];
+            if (!file) {
+                document.body.removeChild(input);
+                resolve(null);
+                return;
             }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target?.result as string) as StorageData;
+                    resolve(data);
+                } catch (error) {
+                    console.error("Failed to parse uploaded data:", error);
+                    reject(error);
+                }
+                document.body.removeChild(input);
+            };
+            reader.onerror = (error) => {
+                console.error("File reading error:", error);
+                reject(error);
+                document.body.removeChild(input);
+            };
+            reader.readAsText(file);
         };
-        reader.onerror = (e) => {
-            console.error("File reading error:", e);
-            reject(e);
-        };
-        reader.readAsText(file);
+        input.click();
     });
 }

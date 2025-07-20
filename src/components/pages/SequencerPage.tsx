@@ -6,6 +6,7 @@ import {ImageButton} from "../ImageButton.tsx";
 import {type Color, colors} from "../../utils/colors.ts";
 import {type Dispatch, type SetStateAction, useEffect, useRef, useState} from "react";
 import {debounce} from "lodash";
+import {downloadData, type SequencerData, type StorageData, uploadData} from "../../utils/storage.ts";
 
 export function SequencerPage() {
     const {t} = useTranslation();
@@ -14,6 +15,7 @@ export function SequencerPage() {
     const [tempo, setTempo] = useState(120);
     const [isPlaying, setIsPlaying] = useState(false);
 
+    const storageDataRef = useRef<StorageData | null>(null);
     const sequencersRef = useRef<(SequencerRef | null)[]>([]);
     const debouncedSetTempo = useRef(
         debounce((value: number, setTempo: Dispatch<SetStateAction<number>>) => {
@@ -77,12 +79,58 @@ export function SequencerPage() {
         sequencersRef.current = sequencersRef.current.filter((_, i) => i !== index);
     }
 
-    const handleDownload = () => {
+    const handleSequencerChange = (data: SequencerData, index: number, color: Color) => {
+       if (!storageDataRef.current) {
+            storageDataRef.current = {
+                tempo: tempo,
+                sequencers: []
+            };
+        }
 
+        if (storageDataRef.current.sequencers.find(seq => seq.index === index)) {
+            const existingSeqIndex = storageDataRef.current.sequencers.findIndex(seq => seq.index === index);
+            storageDataRef.current.sequencers[existingSeqIndex] = {
+                ...data,
+                index: index,
+                color: color
+            };
+        } else {
+            storageDataRef.current.sequencers.push({
+                ...data,
+                index: index,
+                color: color
+            })
+        }
     }
 
-    const handleUpload = () => {
+    const handleDownload = () => {
+        if (!storageDataRef.current) {
+            alert(t('sequencer.no_data'));
+            return;
+        }
 
+        downloadData(storageDataRef.current);
+    }
+
+    const handleUpload = async () => {
+        const data = await uploadData();
+        if (!data) {
+            alert(t('sequencer.upload_failed'));
+            return;
+        }
+
+        storageDataRef.current = data;
+        setTempo(data.tempo);
+        setSequencers(data.sequencers.map(seq => ({
+            name: `seq${seq.index + 1}`,
+            color: seq.color
+        })));
+
+        sequencersRef.current.forEach((seq, index) => {
+            if (!seq) return;
+
+            seq.importData(data.sequencers.find(s => s.index === index) as SequencerData);
+        });
     }
 
     const handleClear = () => {
@@ -151,6 +199,7 @@ export function SequencerPage() {
                                 color={seq.color}
                                 tempo={tempo}
                                 onDelete={() => removeSequencer(index)}
+                                onChange={(data) => handleSequencerChange(data, index, seq.color)}
                             />
                         </Col>
                     )}
