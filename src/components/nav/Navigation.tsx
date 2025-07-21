@@ -2,9 +2,10 @@ import styles from './Navigation.module.css';
 import {Container, Nav, Navbar} from 'react-bootstrap';
 import LanguageSelector from "../LanguageSelector.tsx";
 import {NavLink} from "./NavLink.tsx";
+import {useLocation} from "react-router-dom";
 
 export function Navigation() {
-    const location = window.location.pathname;
+    const location = useLocation().pathname;
 
     return (
         <Navbar bg="dark" variant="dark" expand="lg" className={`${styles.navbar} ${location === '/' ? styles.navHome : ''}`} fixed="top">

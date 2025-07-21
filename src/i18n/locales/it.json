@@ -66,6 +66,18 @@
       "import": "Importa"
     }
   },
+  "about": {
+    "title": "Informazioni su Sound Lab",
+    "description": "Soun Lab è un modo interattivo e divertente per imparare qualcosa sulle onde sonore, sulla musica e la sintesi della musica. Esplora le differenti forme d'onda, crea le tue sequenze e mischia i suoni. Perfetto per gli entusiasti della musica e menti creative!",
+    "author_links": "Autori & Link",
+    "github_repository": "Repository GitHub",
+    "credits": "Crediti",
+    "icons": "Icone da",
+    "ui": "UI fornita da <ui1/> e <ui2/>.",
+    "fonts": "Font da",
+    "contacts": "Contatti & Feedback",
+    "contact_info": "Sound Lab è un progetto open-source. Per feedback, suggerimenti, o per contribuire, per favore apri una issue o una pull request su"
+  },
   "aria": {
     "add_oscillator": "Aggiungi Oscillatore",
     "delete_oscillator": "Rimuovi Oscillatore",

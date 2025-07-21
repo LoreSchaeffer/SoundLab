@@ -66,6 +66,18 @@
       "import": "Import"
     }
   },
+  "about": {
+    "title": "About Sound Lab",
+    "description": "Sound Lab is a fun and interactive way to learn about sound waves, music, and audio synthesis. Explore different waveforms, create your own sequences, and mix sounds together. Perfect for music enthusiasts and curious minds!",
+    "author_links": "Authors & Links",
+    "github_repository": "GitHub Repository",
+    "credits": "Credits",
+    "icons": "Icons by",
+    "ui": "UI powered by <ui1/> and <ui2/>.",
+    "fonts": "Fonts by",
+    "contacts": "Contacts & Feedback",
+    "contact_info": "Sound Lab is an open-source project. For feedback, suggestions, or to contribute, please open an issue or pull request on"
+  },
   "aria": {
     "add_oscillator": "Add Oscillator",
     "delete_oscillator": "Delete Oscillator",
