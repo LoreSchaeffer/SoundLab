@@ -149,7 +149,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             setIsPlaying(true);
         }
 
-        const updateSelectedCol = () => {
+        const updateSelectedCol = async () => {
             setSelectedCol(prev => {
                 if (prev === null) return 0;
                 return (prev + 1) % cols;

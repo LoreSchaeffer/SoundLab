@@ -7,6 +7,8 @@ import {type Color, colors} from "../../utils/colors.ts";
 import {type Dispatch, type SetStateAction, useEffect, useRef, useState} from "react";
 import {debounce} from "lodash";
 import {downloadData, type SequencerData, type StorageData, uploadData} from "../../utils/storage.ts";
+import type {Example} from "../../utils/types.ts";
+import {DropdownSubmenu} from "../DropdownSubmenu.tsx";
 
 export function SequencerPage() {
     const {t} = useTranslation();
@@ -14,6 +16,8 @@ export function SequencerPage() {
     const [sequencers, setSequencers] = useState<{ name: string, color: Color }[]>([{name: 'seq1', color: colors.blue}]);
     const [tempo, setTempo] = useState(120);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [importedData, setImportedData] = useState<StorageData | null>(null);
+    const [examples, setExamples] = useState<Example[]>([]);
 
     const storageDataRef = useRef<StorageData | null>(null);
     const sequencersRef = useRef<(SequencerRef | null)[]>([]);
@@ -24,6 +28,17 @@ export function SequencerPage() {
     ).current;
 
     useEffect(() => {
+        fetch('/examples/examples.json')
+            .then(res => res.json())
+            .then(data => {
+                setExamples(data);
+            })
+            .catch(err => {
+                console.error('Failed to load examples:', err);
+            });
+    }, []);
+
+    useEffect(() => {
         sequencersRef.current.forEach((seq) => {
             if (seq) seq.changeTempo(tempo);
         });
@@ -32,6 +47,18 @@ export function SequencerPage() {
     useEffect(() => {
         if (sequencers.length === 0) setSequencers([{name: 'seq1', color: colors.blue}]);
     }, [sequencers]);
+
+    useEffect(() => {
+        if (!importedData) return;
+
+        sequencersRef.current.forEach((seq, index) => {
+            if (!seq) return;
+
+            seq.importData(importedData.sequencers.find(s => s.index === index) as SequencerData);
+        });
+
+        setImportedData(null);
+    }, [sequencers, importedData]);
 
     const handlePlay = () => {
         if (sequencers.length === 0) return;
@@ -77,10 +104,10 @@ export function SequencerPage() {
         handleStop();
         setSequencers(sequencers.filter((_, i) => i !== index));
         sequencersRef.current = sequencersRef.current.filter((_, i) => i !== index);
-    }
+    };
 
     const handleSequencerChange = (data: SequencerData, index: number, color: Color) => {
-       if (!storageDataRef.current) {
+        if (!storageDataRef.current) {
             storageDataRef.current = {
                 tempo: tempo,
                 sequencers: []
@@ -101,7 +128,7 @@ export function SequencerPage() {
                 color: color
             })
         }
-    }
+    };
 
     const handleDownload = () => {
         if (!storageDataRef.current) {
@@ -110,10 +137,9 @@ export function SequencerPage() {
         }
 
         downloadData(storageDataRef.current);
-    }
+    };
 
-    const handleUpload = async () => {
-        const data = await uploadData();
+    const importData = (data: StorageData | null) => {
         if (!data) {
             alert(t('sequencer.upload_failed'));
             return;
@@ -126,11 +152,21 @@ export function SequencerPage() {
             color: seq.color
         })));
 
-        sequencersRef.current.forEach((seq, index) => {
-            if (!seq) return;
+        setImportedData(data);
+    };
 
-            seq.importData(data.sequencers.find(s => s.index === index) as SequencerData);
-        });
+    const handleUpload = async () => {
+        importData(await uploadData());
+    };
+
+    const handleImportExample = (example: Example) => {
+        fetch(`/examples/${example.file}`)
+            .then(res => res.json())
+            .then(data => importData(data))
+            .catch(err => {
+                console.error('Failed to import example:', err);
+                alert(t('sequencer.import_failed', {name: example.name}));
+            });
     }
 
     const handleClear = () => {
@@ -139,7 +175,7 @@ export function SequencerPage() {
         sequencersRef.current = [];
         debouncedSetTempo(120, setTempo);
         setIsPlaying(false);
-    }
+    };
 
     return (
         <>
@@ -158,10 +194,30 @@ export function SequencerPage() {
                             <img src={'/images/icons/menu.png'} alt={t('sequencer.menu')}/>
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
-                            <Dropdown.Item className={styles.dropdownItem} onClick={handleClear}><img src={'/images/icons/clean.png'} alt="Clear" />Clear</Dropdown.Item>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleClear}><img src={'/images/icons/clean.png'} alt="Clear"/>Clear</Dropdown.Item>
                             <Dropdown.Divider/>
-                            <Dropdown.Item className={styles.dropdownItem} onClick={handleDownload}><img src={'/images/icons/download.png'} alt="Download" />Download</Dropdown.Item>
-                            <Dropdown.Item className={styles.dropdownItem} onClick={handleUpload}><img src={'/images/icons/upload.png'} alt="Upload" />Upload</Dropdown.Item>
+                            <DropdownSubmenu toggle={
+                                <>
+                                    <img src={'/images/icons/examples.png'} alt={t('sequencer.examples')}/>
+                                    {t('sequencer.examples')}
+                                </>
+                            }
+                                             toggleClassName={styles.dropdownItem}
+                            >
+                                {examples.map((example) => (
+                                    <Dropdown.Item
+                                        key={example.file}
+                                        className={styles.dropdownItem}
+                                        onClick={() => handleImportExample(example)}
+                                    >
+                                        <img src={`/images/icons/${example.icon}.png`} alt={example.name} className={styles.exampleIcon}/>
+                                        {example.name}
+                                    </Dropdown.Item>
+                                ))}
+                            </DropdownSubmenu>
+                            <Dropdown.Divider/>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleDownload}><img src={'/images/icons/download.png'} alt="Download"/>Download</Dropdown.Item>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleUpload}><img src={'/images/icons/upload.png'} alt="Upload"/>Upload</Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
 
@@ -190,7 +246,7 @@ export function SequencerPage() {
 
                 <Row>
                     {sequencers.map((seq, index) =>
-                        <Col className={'col-12 mb-3'} key={index}>
+                        <Col className={'col-12 col-xl-6 mb-3'} key={index}>
                             <Sequencer
                                 ref={ref => {
                                     sequencersRef.current[index] = ref;

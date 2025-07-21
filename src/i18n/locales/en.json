@@ -54,7 +54,8 @@
     "high_volume": "Loud",
     "tempo_label": "Tempo:",
     "fast": "Fast",
-    "slow": "Slow"
+    "slow": "Slow",
+    "examples": "Examples"
   },
   "aria": {
     "delete_oscillator": "Delete Oscillator",
