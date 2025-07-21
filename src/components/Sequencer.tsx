@@ -51,9 +51,9 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         const [isPlaying, setIsPlaying] = useState(false);
         const [cols, setCols] = useState(16);
         const [sequence, setSequence] = useState<Record<number, Note[]>>({});
-        const [selectedCol, setSelectedCol] = useState<number | null>(null);
         const [isManaged, setIsManaged] = useState(false);
 
+        const selectorRef = useRef<HTMLDivElement>(null);
         const sequenceRef = useRef<Record<number, Note[]>>(sequence);
         const managedRef = useRef<boolean>(isManaged);
         const maxCols = useRef<number | null>(null);
@@ -128,8 +128,16 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
 
         }, [waveform, amplitude, cols, sequence, onChange]);
 
+        const resetSelectorPosition = (show: boolean) => {
+            if (!selectorRef.current) return;
+
+            selectorRef.current.style.left = '50px';
+            if (show) selectorRef.current.style.display = 'block';
+            else selectorRef.current.style.display = 'none';
+        }
+
         const startPlaying = () => {
-            setSelectedCol(null);
+            resetSelectorPosition(true);
 
             if (schedulesRef.current.length > 0) {
                 schedulesRef.current.forEach(id => Tone.getTransport().clear(id));
@@ -149,13 +157,6 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             setIsPlaying(true);
         }
 
-        const updateSelectedCol = async () => {
-            setSelectedCol(prev => {
-                if (prev === null) return 0;
-                return (prev + 1) % cols;
-            });
-        }
-
         const createPart = () => {
             const events: [string, string[]][] = Object.entries(sequenceRef.current).map(([step, notes]) => [`0:${step}:0`, notes.map(noteToString)]);
             const part = new Part((time: number, notes: string[]) => synthRef.current?.triggerAttackRelease(notes, DURATION, time, 0.6), events);
@@ -163,11 +164,23 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             part.loop = false;
             part.loopEnd = Tone.Time(DURATION).toSeconds() * (managedRef.current ? maxCols.current || cols : cols);
 
+            schedulesRef.current.push(Tone.getTransport().scheduleOnce(startPlaying, part.loopEnd));
+
             const thisLoopEnd = Tone.Time(DURATION).toSeconds() * cols;
 
-            schedulesRef.current.push(Tone.getTransport().scheduleOnce(startPlaying, part.loopEnd));
-            if (managedRef.current) schedulesRef.current.push(Tone.getTransport().scheduleOnce(() => setSelectedCol(null), thisLoopEnd));
-            schedulesRef.current.push(Tone.getTransport().scheduleRepeat(updateSelectedCol, DURATION, 0, thisLoopEnd));
+            if (managedRef.current) schedulesRef.current.push(Tone.getTransport().scheduleOnce(() => {
+                resetSelectorPosition(false);
+            }, thisLoopEnd));
+            schedulesRef.current.push(Tone.getTransport().scheduleRepeat((time) => {
+                Tone.getDraw().schedule(() => {
+                    if (!selectorRef.current) return;
+
+                    const position = Tone.getTransport().seconds % (cols * Tone.Time(DURATION).toSeconds());
+                    const colIndex = Math.floor(position / Tone.Time(DURATION).toSeconds());
+
+                    selectorRef.current.style.left = `${50 + colIndex * 25}px`;
+                }, time);
+            }, DURATION, 0, thisLoopEnd));
 
             return part;
         }
@@ -199,7 +212,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             Tone.getTransport().stop();
 
             setIsPlaying(false);
-            setSelectedCol(null);
+            resetSelectorPosition(false);
         };
 
         const playNote = async (note: Note) => {
@@ -287,7 +300,6 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                     return newSequence;
                 });
 
-                setSelectedCol(null);
                 setCols(prev => Math.max(prev - 1, 1));
             }
         };
@@ -302,11 +314,13 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         }
 
         const importData = (data: SequencerData) => {
+            handleStop();
+
             setWaveform(data.waveform);
             setAmplitude(data.amplitude);
             setCols(data.cols);
             setSequence(sequenceFromString(data.sequence));
-            setSelectedCol(null);
+            resetSelectorPosition(false);
         }
 
         useImperativeHandle(ref, () => ({
@@ -397,7 +411,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                             {colHeaders.map((col, colIdx) => (
                                 <div
                                     key={`col-${colIdx}`}
-                                    className={`${styles.colHeader} ${colIdx === colHeaders.length - 1 ? styles.lastColHeader : ''} ${colIdx === selectedCol ? styles.selectedColHeader : ''}`}
+                                    className={`${styles.colHeader} ${colIdx === colHeaders.length - 1 ? styles.lastColHeader : ''}`}
                                     style={{borderColor: color.border}}
                                     onMouseEnter={handleMouseEnterHeader}
                                     onMouseLeave={handleMouseLeaveHeader}
@@ -419,7 +433,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                     {colHeaders.map((_col, colIdx) => (
                                         <div
                                             key={`cell-${rowIdx}-${colIdx}`}
-                                            className={`${styles.cell} ${colIdx === 0 ? styles.firstColCell : ''} ${colIdx === colHeaders.length - 1 ? styles.cellDisabled : ''} ${selectedCol === colIdx ? styles.selectedCell : ''} ${rowIdx === Object.values(notes).length - 1 ? styles.lastRowCell : ''}`}
+                                            className={`${styles.cell} ${colIdx === 0 ? styles.firstColCell : ''} ${colIdx === colHeaders.length - 1 ? styles.cellDisabled : ''} ${rowIdx === Object.values(notes).length - 1 ? styles.lastRowCell : ''}`}
                                             style={{
                                                 backgroundColor: (sequence[colIdx] || []).find(n => sameNote(note, n)) ? color.line : '',
                                             }}
@@ -431,17 +445,17 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                 </Fragment>
                             ))}
                         </div>
-                        {selectedCol !== null &&
-                            <div
-                                className={styles.selector}
-                                style={{
-                                    left: (50 + selectedCol * 25) + 'px',
-                                    height: ((Object.keys(notes).length + 1) * 15 + 4) + 'px',
-                                    backgroundColor: color.header + '80',
-                                    borderColor: color.line
-                                }}
-                            ></div>
-                        }
+                        <div
+                            ref={selectorRef}
+                            className={styles.selector}
+                            style={{
+                                display: 'none',
+                                left: '50px',
+                                height: ((Object.keys(notes).length + 1) * 15 + 4) + 'px',
+                                backgroundColor: color.header + '80',
+                                borderColor: color.line
+                            }}
+                        ></div>
                     </div>
                 </Card.Body>
             </Card>
