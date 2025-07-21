@@ -6,7 +6,7 @@ import {Button, Container} from "react-bootstrap";
 import {useNavigate} from "react-router-dom";
 
 export function HomePage() {
-    const {navigate} = useNavigate();
+    const navigate = useNavigate();
     const {t} = useTranslation();
 
     return (

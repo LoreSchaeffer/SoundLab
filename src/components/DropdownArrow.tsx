@@ -1,12 +1,10 @@
-import React from 'react';
-
 export type DropdownArrowProps = {
     className?: string;
     color?: string;
     direction?: "up" | "down" | "left" | "right";
 }
 
-export function DropdownArrow({ className, color = 'white', direction = 'down' }: DropdownArrowProps) {
+export function DropdownArrow({className, color = 'white', direction = 'down'}: DropdownArrowProps) {
     let rotation = 0;
     switch (direction) {
         case 'up':
@@ -30,7 +28,7 @@ export function DropdownArrow({ className, color = 'white', direction = 'down' }
             viewBox="0 0 16 16"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            style={{ transform: `rotate(${rotation}deg)` }}
+            style={{transform: `rotate(${rotation}deg)`}}
         >
             <path
                 d="M4 6L8 10L12 6"

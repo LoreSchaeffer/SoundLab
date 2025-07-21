@@ -59,6 +59,7 @@
     "tempo_label": "Tempo:",
     "fast": "Schnell",
     "slow": "Langsam",
+    "click_to_delete": "Klicke zum Entfernen der Spalte",
     "menu": {
       "clear": "Leeren",
       "examples": "Beispiele",

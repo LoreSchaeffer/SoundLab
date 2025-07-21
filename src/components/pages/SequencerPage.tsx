@@ -45,6 +45,11 @@ export function SequencerPage() {
         sequencersRef.current.forEach((seq) => {
             if (seq) seq.changeTempo(tempo);
         });
+
+        if (storageDataRef.current) {
+            storageDataRef.current.tempo = tempo;
+            saveToStorage(storageDataRef.current);
+        }
     }, [tempo, sequencersRef]);
 
     useEffect(() => {

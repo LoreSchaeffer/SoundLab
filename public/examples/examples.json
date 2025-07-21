@@ -3,5 +3,10 @@
     "name": "Super Mario",
     "file": "mario.json",
     "icon": "star"
+  },
+  {
+    "name": "Tetris",
+    "file": "tetris.json",
+    "icon": "shapes"
   }
 ]

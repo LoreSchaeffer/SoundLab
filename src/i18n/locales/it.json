@@ -59,6 +59,7 @@
     "tempo_label": "Tempo:",
     "fast": "Veloce",
     "slow": "Lento",
+    "click_to_delete": "Clicca per rimuovere la colonna",
     "menu": {
       "clear": "Pulisci",
       "examples": "Esempi",

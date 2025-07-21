@@ -59,6 +59,7 @@
     "tempo_label": "Tempo:",
     "fast": "Fast",
     "slow": "Slow",
+    "click_to_delete": "Click to delete column",
     "menu": {
       "clear": "Clear",
       "examples": "Examples",

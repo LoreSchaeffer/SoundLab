@@ -52,7 +52,9 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
         const [cols, setCols] = useState(16);
         const [sequence, setSequence] = useState<Record<number, Note[]>>({});
         const [isManaged, setIsManaged] = useState(false);
+        const [hoveredCell, setHoveredCell] = useState<{note: Note, col: number} | null>(null);
 
+        const containerRef = useRef<HTMLDivElement>(null);
         const selectorRef = useRef<HTMLDivElement>(null);
         const sequenceRef = useRef<Record<number, Note[]>>(sequence);
         const managedRef = useRef<boolean>(isManaged);
@@ -179,6 +181,18 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                     const colIndex = Math.floor(position / Tone.Time(DURATION).toSeconds());
 
                     selectorRef.current.style.left = `${50 + colIndex * 25}px`;
+
+                    if (containerRef.current) {
+                        const containerWidth = containerRef.current.clientWidth;
+                        const selectorLeft = parseFloat(selectorRef.current.style.left);
+                        const selectorWidth = selectorRef.current.clientWidth;
+
+                        if (selectorLeft + selectorWidth > containerRef.current.scrollLeft + containerWidth) {
+                            containerRef.current.scrollLeft = selectorLeft + selectorWidth - containerWidth;
+                        } else if (selectorLeft < containerRef.current.scrollLeft) {
+                            containerRef.current.scrollLeft = selectorLeft;
+                        }
+                    }
                 }, time);
             }, DURATION, 0, thisLoopEnd));
 
@@ -229,6 +243,8 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             } else {
                 target.style.backgroundColor = color.header;
             }
+
+            setHoveredCell({note: note, col: idx});
         };
 
         const handleMouseLeaveCell = (e: React.MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
@@ -241,6 +257,8 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             } else {
                 target.style.backgroundColor = '';
             }
+
+            setHoveredCell(null);
         };
 
         const handleCellClick = (e: React.MouseEvent<HTMLDivElement>, note: Note, idx: number) => {
@@ -285,7 +303,15 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
 
         const handleHeaderClick = (idx: number) => {
             if (idx === cols) {
-                setCols(prev => prev + 1);
+                setCols(prev => {
+                    const next = prev + 1;
+                    setTimeout(() => {
+                        if (containerRef.current) {
+                            containerRef.current.scrollLeft = containerRef.current.scrollWidth;
+                        }
+                    }, 0);
+                    return next;
+                });
             } else {
                 setSequence(prev => {
                     const newSequence: Record<number, Note[]> = {};
@@ -404,7 +430,7 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                     )}
                 </Card.Header>
                 <Card.Body>
-                    <div className={`${styles.sequenceWrapper}`}>
+                    <div ref={containerRef} className={`${styles.sequenceWrapper}`}>
                         <div className={styles.sequenceContainer} style={{gridTemplateColumns: `50px repeat(${cols + 1}, 25px)`,}}>
                             <div className={styles.sequenceHeader}></div>
 
@@ -412,7 +438,11 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                 <div
                                     key={`col-${colIdx}`}
                                     className={`${styles.colHeader} ${colIdx === colHeaders.length - 1 ? styles.lastColHeader : ''}`}
-                                    style={{borderColor: color.border}}
+                                    title={'Click to delete column'}
+                                    style={{
+                                        borderColor: color.border,
+                                        backgroundColor: hoveredCell?.col === colIdx ? color.header : ''
+                                }}
                                     onMouseEnter={handleMouseEnterHeader}
                                     onMouseLeave={handleMouseLeaveHeader}
                                     onClick={() => handleHeaderClick(colIdx)}
@@ -425,7 +455,10 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
                                 <Fragment key={`row-${rowIdx}`}>
                                     <div
                                         className={`${styles.rowHeader} ${note.alteration === '' ? styles.whiteRow : styles.blackRow} ${rowIdx === Object.values(notes).length - 1 ? styles.lastRowHeader : ''}`}
-                                        style={{borderColor: color.border}}
+                                        style={{
+                                            borderColor: color.border,
+                                            backgroundColor: hoveredCell?.note === note ? note.alteration === '' ? color.header : color.line : ''
+                                    }}
                                     >
                                         {t(`notes.${note.note}`) + `${note.alteration}${note.octave}`}
                                     </div>
