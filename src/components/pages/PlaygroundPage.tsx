@@ -1,5 +1,5 @@
 import styles from "./PlaygroundPage.module.css";
-import {Button, ButtonGroup, Card, Col, Form, Row} from "react-bootstrap";
+import {Button, ButtonGroup, Card, Col, Container, Form, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {type Dispatch, type RefObject, type SetStateAction, useCallback, useEffect, useRef, useState} from "react";
 import {type WaveformType, waveformTypes} from "../../utils/waveform.ts";
@@ -207,10 +207,10 @@ export function PlaygroundPage() {
     };
 
     return (
-        <>
+        <Container fluid className="py-4 nav-space">
             <div className={'page-title'}>
                 <div className={'d-flex align-items-center gap-2 mb-3'}>
-                    <img src={'/images/icons/wave.png'} alt={'Playground Icon'}/>
+                    <img src={'/images/icons/wave.png'} alt={t('alt.playground')}/>
                     <h2 className={'alternative-font'}>{t('playground.title')}</h2>
                 </div>
                 <p>{t('playground.description')}</p>
@@ -219,7 +219,7 @@ export function PlaygroundPage() {
                 <Col lg={8}>
                     <Card className={'shadow-sm h-100 b-info'}>
                         <Card.Header className={'info'}>
-                            <img className={'card-header-icon'} src={"/images/icons/graph.png"} alt={"Wave Icon"}/>
+                            <img className={'card-header-icon'} src={"/images/icons/graph.png"} alt={t('alt.oscillator_wave')}/>
                             <h3 className={'alternative-font'}>{t('playground.visualizer_title')}</h3>
                         </Card.Header>
                         <Card.Body ref={canvasContainerRef}>
@@ -235,13 +235,13 @@ export function PlaygroundPage() {
                 <Col lg={4}>
                     <Card className={'shadow-sm h-100 b-warning'}>
                         <Card.Header className={'warning'}>
-                            <img className={'card-header-icon'} src={"/images/icons/tune.png"} alt={"Settings Icon"}/>
+                            <img className={'card-header-icon'} src={"/images/icons/tune.png"} alt={t('alt.oscillator_settings')}/>
                             <h3 className={'alternative-font'}>{t('playground.controls_title')}</h3>
                         </Card.Header>
                         <Card.Body>
                             <div className={'mb-4'}>
                                 <Form.Label className={'fs-5 fw-bold'}>
-                                    <img src={'/images/icons/shapes.png'} alt={'Waveform Icon'} className={styles.labelIcon}/>
+                                    <img src={'/images/icons/shapes.png'} alt={t('alt.oscillator_waveform')} className={styles.labelIcon}/>
                                     {t('playground.controls.wave_type_label')}
                                 </Form.Label>
                                 <ButtonGroup className={'d-flex flex-wrap gap-2'}>
@@ -261,7 +261,7 @@ export function PlaygroundPage() {
 
                             <div className={'mb-4'}>
                                 <Form.Label className={'fs-5 fw-bold'}>
-                                    <img src={'/images/icons/music_notes.png'} alt={'Frequency Icon'} className={styles.labelIcon}/>
+                                    <img src={'/images/icons/music_notes.png'} alt={t('alt.oscillator_frequency')} className={styles.labelIcon}/>
                                     {t('playground.controls.frequency_label') + ` ${frequency} Hz`}
                                 </Form.Label>
                                 <Form.Range
@@ -277,7 +277,7 @@ export function PlaygroundPage() {
                                 </div>
 
                                 <Form.Label className={'fs-5 fw-bold mt-3'}>
-                                    <img src={'/images/icons/music_note.png'} alt={'Note Icon'} className={styles.labelIcon}/>
+                                    <img src={'/images/icons/music_note.png'} alt={t('alt.oscillator_notes')} className={styles.labelIcon}/>
                                     {t('playground.controls.common_notes')}
                                 </Form.Label>
 
@@ -298,7 +298,7 @@ export function PlaygroundPage() {
 
                             <div className={'mb-4'}>
                                 <Form.Label className={'fs-5 fw-bold'}>
-                                    <img src={'/images/icons/audio.png'} alt={'Amplitude Icon'} className={styles.labelIcon}/>
+                                    <img src={'/images/icons/audio.png'} alt={t('alt.oscillator_amplitude')} className={styles.labelIcon}/>
                                     {t('playground.controls.amplitude_label') + ` ${Math.round(amplitude * 100)} %`}
                                 </Form.Label>
                                 <Form.Range
@@ -323,7 +323,7 @@ export function PlaygroundPage() {
                                     disabled={isPlaying}
                                     className={styles.formBtn + ' fw-bold fs-4 flex-fill'}
                                 >
-                                    <img src={'/images/icons/play.png'} alt={'Play Icon'} className={styles.labelIcon}/>
+                                    <img src={'/images/icons/play.png'} alt={t('alt.play')} className={styles.labelIcon}/>
                                     Play
                                 </Button>
                                 <Button
@@ -333,7 +333,7 @@ export function PlaygroundPage() {
                                     disabled={!isPlaying}
                                     className={styles.formBtn + ' fw-bold fs-4 flex-fill'}
                                 >
-                                    <img src={'/images/icons/stop.png'} alt={'Stop Icon'} className={styles.labelIcon}/>
+                                    <img src={'/images/icons/stop.png'} alt={t('alt.stop')} className={styles.labelIcon}/>
                                     Stop
                                 </Button>
                             </div>
@@ -341,6 +341,6 @@ export function PlaygroundPage() {
                     </Card>
                 </Col>
             </Row>
-        </>
+        </Container>
     )
 }

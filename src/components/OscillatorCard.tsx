@@ -137,7 +137,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
         return (
             <Card className={'shadow-sm h-100'} style={{borderColor: color.border}}>
                 <Card.Header style={{backgroundColor: color.header, color: color.text, position: 'relative'}}>
-                    <img className={'card-header-icon'} src={'/images/icons/tune.png'} alt={'Settings Icon'}/>
+                    <img className={'card-header-icon'} src={'/images/icons/tune.png'} alt={t('alt.oscillator_settings')}/>
                     <h3 className={'alternative-font'}>{t('mixer.oscillator_title') + ` ${number}`}</h3>
 
                     {onDelete && (
@@ -149,7 +149,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
                 <Card.Body>
                     <div className={'mb-4'}>
                         <Form.Label className={'fs-5 fw-bold'}>
-                            <img src={'/images/icons/shapes.png'} alt={'Waveform Icon'} className={styles.labelIcon}/>
+                            <img src={'/images/icons/shapes.png'} alt={t('alt.oscillator_waveform')} className={styles.labelIcon}/>
                             {t('playground.controls.wave_type_label')}
                         </Form.Label>
                         <ButtonGroup className={'d-flex flex-wrap gap-2'}>
@@ -169,7 +169,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
 
                     <div className={'mb-4'}>
                         <Form.Label className={'fs-5 fw-bold'}>
-                            <img src={'/images/icons/music_notes.png'} alt={'Frequency Icon'} className={styles.labelIcon}/>
+                            <img src={'/images/icons/music_notes.png'} alt={t('oscillator_frequency')} className={styles.labelIcon}/>
                             {t('playground.controls.frequency_label') + ` ${frequency} Hz`}
                         </Form.Label>
                         <Form.Range
@@ -185,7 +185,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
                         </div>
 
                         <Form.Label className={'fs-5 fw-bold mt-3'}>
-                            <img src={'/images/icons/music_note.png'} alt={'Note Icon'} className={styles.labelIcon}/>
+                            <img src={'/images/icons/music_note.png'} alt={t('alt.oscillator_notes')} className={styles.labelIcon}/>
                             {t('playground.controls.common_notes')}
                         </Form.Label>
 
@@ -206,7 +206,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
 
                     <div className={'mb-4'}>
                         <Form.Label className={'fs-5 fw-bold'}>
-                            <img src={'/images/icons/audio.png'} alt={'Amplitude Icon'} className={styles.labelIcon}/>
+                            <img src={'/images/icons/audio.png'} alt={t('alt.oscillator_amplitude')} className={styles.labelIcon}/>
                             {t('playground.controls.amplitude_label') + ` ${Math.round(amplitude * 100)} %`}
                         </Form.Label>
                         <Form.Range
@@ -231,7 +231,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
                             disabled={isPlaying}
                             className={styles.formBtn + ' fw-bold fs-4 flex-fill'}
                         >
-                            <img src={'/images/icons/play.png'} alt={'Play Icon'} className={styles.labelIcon}/>
+                            <img src={'/images/icons/play.png'} alt={t('alt.play')} className={styles.labelIcon}/>
                             Play
                         </Button>
                         <Button
@@ -241,7 +241,7 @@ export const OscillatorCard = forwardRef<OscillatorCardRef, OscillatorCardProps>
                             disabled={!isPlaying}
                             className={styles.formBtn + ' fw-bold fs-4 flex-fill'}
                         >
-                            <img src={'/images/icons/stop.png'} alt={'Stop Icon'} className={styles.labelIcon}/>
+                            <img src={'/images/icons/stop.png'} alt={t('alt.stop')} className={styles.labelIcon}/>
                             Stop
                         </Button>
                     </div>

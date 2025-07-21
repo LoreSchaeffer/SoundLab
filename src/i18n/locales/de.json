@@ -1,0 +1,90 @@
+{
+  "sound_lab": "Sound Lab",
+  "waveforms": {
+    "sine": "Sinus",
+    "square": "Rechteck",
+    "triangle": "Dreieck",
+    "sawtooth": "Sägezahn",
+    "noise": "Weißes Rauschen"
+  },
+  "notes": {
+    "c": "C",
+    "d": "D",
+    "e": "E",
+    "f": "F",
+    "g": "G",
+    "a": "A",
+    "b": "B"
+  },
+  "navigation": {
+    "home": "Startseite",
+    "playground": "Wellen-Spielplatz",
+    "mixer": "Wellen-Mixer",
+    "sequencer": "Sequenzer",
+    "about": "Info"
+  },
+  "homepage": {
+    "subtitle": "Entdecke, wie Klänge entstehen, mische Schallwellen und habe Spaß mit Musik.",
+    "play_now": "Jetzt starten!"
+  },
+  "playground": {
+    "title": "Wellen-Spielplatz",
+    "description": "Erkunde verschiedene Schallwellen! Wähle einen Wellentyp, passe Frequenz und Lautstärke an und drücke Play, um den Ton zu hören!",
+    "visualizer_title": "Wellenform-Visualizer",
+    "controls_title": "Steuerung",
+    "controls": {
+      "wave_type_label": "Wellentyp:",
+      "frequency_label": "Frequenz:",
+      "low_pitch": "Tiefer Ton",
+      "high_pitch": "Hoher Ton",
+      "common_notes": "Häufige Noten:",
+      "amplitude_label": "Amplitude:",
+      "low_volume": "Leise",
+      "high_volume": "Laut"
+    }
+  },
+  "mixer": {
+    "title": "Wellen-Mixer",
+    "description": "Mische mehrere Schallwellen! Schalte Oszillatoren ein und aus und entdecke, wie sich die Wellen vermischen!",
+    "oscillator_title": "Welle"
+  },
+  "sequencer": {
+    "title": "Sequenzer",
+    "description": "Erstelle deine eigene Musik! Füge Sequenzen hinzu, färbe die Felder mit den gewünschten Noten und drücke Play, um den Rhythmus zu hören! Du kannst auch Beispiel-Presets anhören.",
+    "sequence_title": "Sequenz",
+    "wave_type_label": "Wellentyp:",
+    "amplitude_label": "Amplitude:",
+    "low_volume": "Leise",
+    "high_volume": "Laut",
+    "tempo_label": "Tempo:",
+    "fast": "Schnell",
+    "slow": "Langsam",
+    "menu": {
+      "clear": "Leeren",
+      "examples": "Beispiele",
+      "export": "Exportieren",
+      "import": "Importieren"
+    }
+  },
+  "aria": {
+    "add_oscillator": "Oszillator hinzufügen",
+    "delete_oscillator": "Oszillator entfernen",
+    "add_sequence": "Sequenz hinzufügen",
+    "delete_sequence": "Sequenz entfernen"
+  },
+  "alt": {
+    "menu": "Menü",
+    "play": "Abspielen",
+    "stop": "Stopp",
+    "stop_all": "Alles stoppen",
+    "playground": "Spielplatz",
+    "oscillator_settings": "Oszillator-Einstellungen",
+    "oscillator_waveform": "Wellenform",
+    "oscillator_frequency": "Frequenz",
+    "oscillator_notes": "Häufige Noten",
+    "oscillator_amplitude": "Amplitude",
+    "mixer": "Mixer",
+    "mixer_wave": "Welle",
+    "sequencer": "Sequenzer"
+  }
+}

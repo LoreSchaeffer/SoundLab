@@ -1,10 +1,90 @@
 {
   "sound_lab": "Sound Lab",
+  "waveforms": {
+    "sine": "Sinusoidale",
+    "square": "Quadrata",
+    "triangle": "Triangolare",
+    "sawtooth": "Dente di sega",
+    "noise": "White Noise"
+  },
+  "notes": {
+    "c": "Do",
+    "d": "Re",
+    "e": "Mi",
+    "f": "Fa",
+    "g": "Sol",
+    "a": "La",
+    "b": "Si"
+  },
   "navigation": {
     "home": "Home",
     "playground": "Parcogiochi Onde",
-    "mixer": "Miscela Onde",
+    "mixer": "Mixer",
     "sequencer": "Sequenziatore",
-    "about": "Informazioni"
+    "about": "Info"
+  },
+  "homepage": {
+    "subtitle": "Scopri come nascono i suoni, combina le onde sonore e divertiti con la musica.",
+    "play_now": "Inizia Ora!"
+  },
+  "playground": {
+    "title": "Parcogiochi Onde",
+    "description": "Esplora differenti onde sonore! Scegli un tipo di onda, aggiusta la frequenza e il volume, poi premi play per sentire il suono!",
+    "visualizer_title": "Visualizzatore Onda",
+    "controls_title": "Controlli",
+    "controls": {
+      "wave_type_label": "Tipo Onda:",
+      "frequency_label": "Frequenza:",
+      "low_pitch": "Grave",
+      "high_pitch": "Acuto",
+      "common_notes": "Note Comuni:",
+      "amplitude_label": "Ampiezza:",
+      "low_volume": "Piano",
+      "high_volume": "Forte"
+    }
+  },
+  "mixer": {
+    "title": "Mixer Onde",
+    "description": "Miscela più onde! Accendi e spegni gli oscillatori e scopri come le onde si mischiano tra di loro!",
+    "oscillator_title": "Onda"
+  },
+  "sequencer": {
+    "title": "Sequenziatore",
+    "description": "Crea la tua musica! Aggiungi sequenze, segna colora le caselle con le note che vuoi suonare e premi play per sentire il ritmo! Puoi anche ascoltare gli esempi preimpostati.",
+    "sequence_title": "Sequenza",
+    "wave_type_label": "Tipo Onda:",
+    "amplitude_label": "Ampiezza:",
+    "low_volume": "Piano",
+    "high_volume": "Forte",
+    "tempo_label": "Tempo:",
+    "fast": "Veloce",
+    "slow": "Lento",
+    "menu": {
+      "clear": "Pulisci",
+      "examples": "Esempi",
+      "export": "Esporta",
+      "import": "Importa"
+    }
+  },
+  "aria": {
+    "add_oscillator": "Aggiungi Oscillatore",
+    "delete_oscillator": "Rimuovi Oscillatore",
+    "add_sequence": "Aggiungi Sequenza",
+    "delete_sequence": "Rimuovi Sequenza"
+  },
+  "alt": {
+    "menu": "Menu",
+    "play": "Play",
+    "stop": "Stop",
+    "stop_all": "Stop Tutto",
+    "playground": "Parcogiochi",
+    "oscillator_settings": "Impostazioni Oscillatore",
+    "oscillator_waveform": "Tipo Onda",
+    "oscillator_frequency": "Frequenza",
+    "oscillator_notes": "Note Comuni",
+    "oscillator_amplitude": "Ampiezza",
+    "mixer": "Mixer",
+    "mixer_wave": "Onda",
+    "sequencer": "Sequenziatore"
   }
 }

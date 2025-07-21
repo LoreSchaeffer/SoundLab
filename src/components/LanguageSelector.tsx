@@ -1,13 +1,15 @@
 import styles from './LanguageSelector.module.css';
 import {Dropdown} from 'react-bootstrap';
 import {useTranslation} from 'react-i18next';
+import {DropdownArrow} from "./DropdownArrow.tsx";
 
 const languages = [
     {code: 'it', name: 'Italiano'},
-    {code: 'en', name: 'English'}
+    {code: 'en', name: 'English'},
+    {code: 'de', name: 'Deutsch'},
 ];
 
-const LanguageSelector = () => {
+const LanguageSelector = ({className}: {className?: string} = {}) => {
     const {i18n} = useTranslation();
 
     const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[1];
@@ -18,12 +20,13 @@ const LanguageSelector = () => {
 
     return (
         <Dropdown drop="down" align="end">
-            <Dropdown.Toggle className={styles.dropdownToggle}>
+            <Dropdown.Toggle className={`dropdown-toggle ${styles.dropdownToggle} ${className === 'home' ? styles.home : ''}`}>
                 <img
                     className={styles.flag}
                     src={`/images/flags/${currentLanguage.code}.svg`}
                     alt={currentLanguage.name}
                 />
+                <DropdownArrow color={className === 'home' ? 'var(--gray-900)' : 'var(--white)'}/>
             </Dropdown.Toggle>
             <Dropdown.Menu>
                 {languages.map((language) => (

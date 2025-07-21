@@ -7,3 +7,24 @@
     line-height: 1.4rem;
     margin: 0;
 }
+
+
+.navHome {
+    background-color: transparent !important;
+}
+
+.navHome a {
+    color: var(--gray-900);
+}
+
+.navHome a:hover {
+    color: var(--blue-500);
+}
+
+.navHome .navbarBrand a {
+    color: var(--blue-500) !important;
+}
+
+.navHome .navbarBrand:hover a {
+    color: var(--blue-300) !important;
+}

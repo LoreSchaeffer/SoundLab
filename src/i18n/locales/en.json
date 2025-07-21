@@ -23,9 +23,13 @@
     "sequencer": "Sequencer",
     "about": "About"
   },
+  "homepage": {
+    "subtitle": "Discover how sounds are made, mix sound waves, and have fun with music.",
+    "play_now": "Start Now!"
+  },
   "playground": {
     "title": "Wave Playground",
-    "description": "Explore different sound waves! Choose a wace type, adjust the frequency and volume, then press play to hear the sound!",
+    "description": "Explore different sound waves! Choose a wave type, adjust the frequency and volume, then press play to hear the sound!",
     "visualizer_title": "Waveform Visualizer",
     "controls_title": "Controls",
     "controls": {
@@ -41,12 +45,12 @@
   },
   "mixer": {
     "title": "Wave Mixer",
-    "description": "Mix up multiple sound waves! Turn oscillators on/off and adjust their settings to create complex sounds!",
+    "description": "Mix up multiple sound waves! Toggle oscillators on and off and discover how the waves blend together!",
     "oscillator_title": "Wave"
   },
   "sequencer": {
     "title": "Sequencer",
-    "description": "Create rhythmic patterns! Add oscillators, set their frequency and amplitude, and arrange them in a sequence to play back your sound!",
+    "description": "Create your own music! Add sequences, color boxes with the notes you want to play, and press play to hear the rhythm! You can also listen to preset examples.",
     "sequence_title": "Sequence",
     "wave_type_label": "Wave Type:",
     "amplitude_label": "Amplitude:",
@@ -55,11 +59,32 @@
     "tempo_label": "Tempo:",
     "fast": "Fast",
     "slow": "Slow",
-    "examples": "Examples"
+    "menu": {
+      "clear": "Clear",
+      "examples": "Examples",
+      "export": "Export",
+      "import": "Import"
+    }
   },
   "aria": {
-    "delete_oscillator": "Delete Oscillator",
     "add_oscillator": "Add Oscillator",
-    "add_sequence": "Add Sequence"
+    "delete_oscillator": "Delete Oscillator",
+    "add_sequence": "Add Sequence",
+    "delete_sequence": "Delete Sequence"
+  },
+  "alt": {
+    "menu": "Menu",
+    "play": "Play",
+    "stop": "Stop",
+    "stop_all": "Stop All",
+    "playground": "Playground",
+    "oscillator_settings": "Oscillator Settings",
+    "oscillator_waveform": "Waveform",
+    "oscillator_frequency": "Frequency",
+    "oscillator_notes": "Common Notes",
+    "oscillator_amplitude": "Amplitude",
+    "mixer": "Mixer",
+    "mixer_wave": "Wave",
+    "sequencer": "Sequencer"
   }
 }

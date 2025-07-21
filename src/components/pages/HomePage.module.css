@@ -1,0 +1,68 @@
+.background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100svh;
+    overflow: hidden;
+}
+
+.animatedBackground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100svh;
+    overflow: hidden;
+}
+
+.mainContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: all 300ms ease;
+}
+
+.logo img {
+    width: 100px;
+    height: 100px;
+}
+
+.logo:hover {
+    transform: scale(1.1);
+}
+
+.logo:hover .imgWrapper {
+    border-radius: 20px;
+    box-shadow: 0 0 50px rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.21);
+}
+
+.mainContainer h1 {
+    font-size: 4.5rem;
+    color: var(--bs-primary-text-emphasis);
+    cursor: default;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.logo:hover h1 {
+    text-shadow: 0 0 50px rgba(255, 255, 255, 1);
+}
+
+.subtitle {
+    font-size: 1.3rem;
+}
+
+.playIcon {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+}

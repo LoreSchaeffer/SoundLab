@@ -1,12 +1,12 @@
 import styles from './SequencerPage.module.css';
 import {useTranslation} from "react-i18next";
 import {Sequencer, type SequencerRef} from "../Sequencer.tsx";
-import {Button, Col, Dropdown, Form, Row} from "react-bootstrap";
+import {Button, Col, Container, Dropdown, Form, Row} from "react-bootstrap";
 import {ImageButton} from "../ImageButton.tsx";
 import {type Color, colors} from "../../utils/colors.ts";
 import {type Dispatch, type SetStateAction, useEffect, useRef, useState} from "react";
 import {debounce} from "lodash";
-import {downloadData, type SequencerData, type StorageData, uploadData} from "../../utils/storage.ts";
+import {downloadData, loadFromStorage, saveToStorage, type SequencerData, type StorageData, uploadData} from "../../utils/storage.ts";
 import type {Example} from "../../utils/types.ts";
 import {DropdownSubmenu} from "../DropdownSubmenu.tsx";
 
@@ -28,6 +28,9 @@ export function SequencerPage() {
     ).current;
 
     useEffect(() => {
+        const storedData = loadFromStorage();
+        if (storedData) importData(storedData);
+
         fetch('/examples/examples.json')
             .then(res => res.json())
             .then(data => {
@@ -128,6 +131,8 @@ export function SequencerPage() {
                 color: color
             })
         }
+
+        saveToStorage(storageDataRef.current);
     };
 
     const handleDownload = () => {
@@ -175,13 +180,15 @@ export function SequencerPage() {
         sequencersRef.current = [];
         debouncedSetTempo(120, setTempo);
         setIsPlaying(false);
+        storageDataRef.current = null;
+        saveToStorage(null);
     };
 
     return (
-        <>
+        <Container fluid className="py-4 nav-space">
             <div className={'page-title'}>
                 <div className={'d-flex align-items-center gap-2 mb-3'}>
-                    <img src={'/images/icons/sequencer.png'} alt={'Sequencer Icon'}/>
+                    <img src={'/images/icons/sequencer.png'} alt={'alt.sequencer'}/>
                     <h2 className={'alternative-font'}>{t('sequencer.title')}</h2>
                 </div>
                 <p>{t('sequencer.description')}</p>
@@ -191,15 +198,15 @@ export function SequencerPage() {
                 <div className={`${styles.player} mb-4 p-2`}>
                     <Dropdown>
                         <Dropdown.Toggle className={styles.dropdownToggle}>
-                            <img src={'/images/icons/menu.png'} alt={t('sequencer.menu')}/>
+                            <img src={'/images/icons/menu.png'} alt={t('alt.menu')}/>
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
-                            <Dropdown.Item className={styles.dropdownItem} onClick={handleClear}><img src={'/images/icons/clean.png'} alt="Clear"/>Clear</Dropdown.Item>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleClear}><img src={'/images/icons/clean.png'} alt={t('sequencer.menu.clear')}/>{t('sequencer.menu.clear')}</Dropdown.Item>
                             <Dropdown.Divider/>
                             <DropdownSubmenu toggle={
                                 <>
-                                    <img src={'/images/icons/examples.png'} alt={t('sequencer.examples')}/>
-                                    {t('sequencer.examples')}
+                                    <img src={'/images/icons/examples.png'} alt={t('sequencer.menu.examples')}/>
+                                    {t('sequencer.menu.examples')}
                                 </>
                             }
                                              toggleClassName={styles.dropdownItem}
@@ -216,8 +223,8 @@ export function SequencerPage() {
                                 ))}
                             </DropdownSubmenu>
                             <Dropdown.Divider/>
-                            <Dropdown.Item className={styles.dropdownItem} onClick={handleDownload}><img src={'/images/icons/download.png'} alt="Download"/>Download</Dropdown.Item>
-                            <Dropdown.Item className={styles.dropdownItem} onClick={handleUpload}><img src={'/images/icons/upload.png'} alt="Upload"/>Upload</Dropdown.Item>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleDownload}><img src={'/images/icons/download.png'} alt={t('sequencer.menu.export')}/>{t('sequencer.menu.export')}</Dropdown.Item>
+                            <Dropdown.Item className={styles.dropdownItem} onClick={handleUpload}><img src={'/images/icons/upload.png'} alt={t('sequencer.menu.import')}/>{t('sequencer.menu.import')}</Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
 
@@ -238,7 +245,7 @@ export function SequencerPage() {
 
                     <ImageButton
                         src={`/images/icons/${isPlaying ? 'stop' : 'play'}.png`}
-                        alt={isPlaying ? 'Play' : 'Stop'}
+                        alt={isPlaying ? t('alt.play') : t('alt.stop')}
                         onClick={isPlaying ? handleStop : handlePlay}
                         className={styles.playBtn}
                     />
@@ -263,6 +270,6 @@ export function SequencerPage() {
             </div>
 
             <Button variant="primary" className={styles.addBtn} aria-label={t('aria.add_sequencer')} onClick={addSequencer}>+</Button>
-        </>
+        </Container>
     )
 }

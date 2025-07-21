@@ -1,5 +1,4 @@
-import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
-import {Container} from 'react-bootstrap';
+import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
 import {Navigation} from './components/nav/Navigation';
 import './App.css';
 import {HomePage} from "./components/pages/HomePage.tsx";
@@ -13,16 +12,14 @@ function App() {
         <Router>
             <div className="App">
                 <Navigation/>
-                <Container fluid className="py-4">
-                    <Routes>
-                        <Route path="/" element={<HomePage/>}/>
-                        <Route path="/playground" element={<PlaygroundPage/>}/>
-                        <Route path="/mixer" element={<MixerPage/>}/>
-                        <Route path="/sequencer" element={<SequencerPage/>}/>
-                        <Route path="/about" element={<AboutPage/>}/>
-                        <Route path="*" element={<HomePage/>}/>
-                    </Routes>
-                </Container>
+                <Routes>
+                    <Route path="/" element={<HomePage/>}/>
+                    <Route path="/playground" element={<PlaygroundPage/>}/>
+                    <Route path="/mixer" element={<MixerPage/>}/>
+                    <Route path="/sequencer" element={<SequencerPage/>}/>
+                    <Route path="/about" element={<AboutPage/>}/>
+                    <Route path="*" element={<HomePage/>}/>
+                </Routes>
             </div>
         </Router>
     );

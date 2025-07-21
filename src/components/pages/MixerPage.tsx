@@ -1,6 +1,6 @@
 import styles from './MixerPage.module.css';
 import {useTranslation} from "react-i18next";
-import {Button, Card, Col, Row} from "react-bootstrap";
+import {Button, Card, Col, Container, Row} from "react-bootstrap";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {OscillatorCard, type OscillatorCardRef} from "../OscillatorCard.tsx";
 import {type Color, colors} from "../../utils/colors.ts";
@@ -214,19 +214,19 @@ export function MixerPage() {
     }
 
     return (
-        <>
+        <Container fluid className="py-4 nav-space">
             <div className={'page-title'}>
                 <div className={'d-flex align-items-center gap-2 mb-3'}>
-                    <img src={'/images/icons/mixer.png'} alt={'Mixer Icon'}/>
+                    <img src={'/images/icons/mixer.png'} alt={t('alt.mixer')}/>
                     <h2 className={'alternative-font'}>{t('mixer.title')}</h2>
                 </div>
                 <p>{t('mixer.description')}</p>
             </div>
             <Card className={'shadow-sm b-info'}>
                 <Card.Header className={'info'}>
-                    <img className={'card-header-icon'} src={"/images/icons/graph.png"} alt={"Wave Icon"}/>
+                    <img className={'card-header-icon'} src={"/images/icons/graph.png"} alt={t('alt.mixer_wave')}/>
                     <h3 className={'alternative-font'}>{t('playground.visualizer_title')}</h3>
-                    <img className={styles.stopAll} src={"/images/icons/stop.png"} alt={"Stop All Icon"} onClick={stopAllOscillators} />
+                    <img className={styles.stopAll} src={"/images/icons/stop.png"} alt={t('alt.stop_all')} onClick={stopAllOscillators} />
                 </Card.Header>
                 <Card.Body ref={canvasContainerRef}>
                     <canvas
@@ -241,7 +241,7 @@ export function MixerPage() {
                 {oscillators.map((osc, index) =>
                     <Col className={'col-12 col-md-6 col-lg-4 mb-3'} key={index}>
                         <OscillatorCard
-                            ref={ref => oscillatorRefs.current[index] = ref}
+                            ref={el => { oscillatorRefs.current[index] = el; }}
                             number={index + 1}
                             color={osc.color}
                             onDelete={() => {
@@ -259,6 +259,6 @@ export function MixerPage() {
             </Row>
 
             <Button variant="primary" className={styles.addBtn} aria-label={t('aria.add_oscillator')} onClick={addOscillator}>+</Button>
-        </>
+        </Container>
     )
 }

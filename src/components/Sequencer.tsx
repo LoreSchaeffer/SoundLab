@@ -352,8 +352,8 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
             <Card className={'shadow-sm'} style={{borderColor: color.border}}>
                 <Card.Header style={{backgroundColor: color.header, color: color.text, position: 'relative'}} className={'d-flex gap-5'}>
                     <div className={'d-flex align-items-center gap-2'}>
-                        <img className={'card-header-icon'} src={'/images/icons/music_notes.png'} alt={'Sequencer'}/>
-                        <h3 className={'alternative-font'}>{t('mixer.oscillator_title') + ` ${number}`}</h3>
+                        <img className={'card-header-icon'} src={'/images/icons/music_notes.png'} alt={t('alt.sequencer')}/>
+                        <h3 className={'alternative-font'}>{t('sequencer.sequence_title') + ` ${number}`}</h3>
                     </div>
 
                     <div className={'d-flex flex-column align-items-center'}>
@@ -391,14 +391,14 @@ export const Sequencer = forwardRef<SequencerRef, SequencerProps>(
 
                     <ImageButton
                         src={`/images/icons/${isPlaying ? 'stop' : 'play'}.png`}
-                        alt={isPlaying ? 'Play' : 'Stop'}
+                        alt={isPlaying ? t('alt.play') : t('alt.stop')}
                         onClick={isPlaying ? handleStop : handlePlay}
                         disabled={isManaged}
                         className={styles.playBtn}
                     />
 
                     {onDelete && (
-                        <button className={styles.closeBtn} onClick={onDelete} aria-label={t('delete_oscillator')} style={{color: color.text}}>
+                        <button className={styles.closeBtn} onClick={onDelete} aria-label={t('delete_sequencer')} style={{color: color.text}}>
                             &times;
                         </button>
                     )}

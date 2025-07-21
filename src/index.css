@@ -272,8 +272,16 @@ body {
     font-synthesis: none;
 }
 
+.nav-space {
+    margin-top: 55px;
+}
+
 .alternative-font {
     font-family: 'Chewy', 'sans-serif', system-ui;
+}
+
+.dropdown-toggle::after {
+    display: none;
 }
 
 /* Buttons */

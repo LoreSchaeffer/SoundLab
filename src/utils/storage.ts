@@ -18,9 +18,10 @@ export type StorageData = {
     sequencers: FullSequencerData[];
 }
 
-export function saveToStorage(data: StorageData) {
+export function saveToStorage(data: StorageData | null) {
     try {
-        localStorage.setItem('sequencers', JSON.stringify(data));
+        if (data == null) localStorage.removeItem('sequencers');
+        else localStorage.setItem('sequencers', JSON.stringify(data));
     } catch (e) {
         console.error("Failed to save to localStorage:", e);
     }

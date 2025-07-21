@@ -4,8 +4,10 @@ import LanguageSelector from "../LanguageSelector.tsx";
 import {NavLink} from "./NavLink.tsx";
 
 export function Navigation() {
+    const location = window.location.pathname;
+
     return (
-        <Navbar bg="dark" variant="dark" expand="lg" className={styles.navbar}>
+        <Navbar bg="dark" variant="dark" expand="lg" className={`${styles.navbar} ${location === '/' ? styles.navHome : ''}`} fixed="top">
             <Container fluid>
                 <Navbar.Brand className={styles.navbarBrand + ' alternative-font'}>
                     <NavLink to={'/'} text={'sound_lab'} icon={'music'}/>
@@ -19,7 +21,7 @@ export function Navigation() {
                         <NavLink to={'/about'} text={'navigation.about'} icon={'about'}/>
 
                         <Nav.Item className={"ms-3"}>
-                            <LanguageSelector/>
+                            <LanguageSelector className={location === '/' ? 'home' : ''}/>
                         </Nav.Item>
                     </Nav>
                 </Navbar.Collapse>

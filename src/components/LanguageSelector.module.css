@@ -30,3 +30,8 @@
 .dropdownFlag {
     height: 20px;
 }
+
+.home:focus,
+.home:hover {
+    background-color: var(--blue-400) !important;
+}
