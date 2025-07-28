@@ -2,6 +2,7 @@ import styles from './LanguageSelector.module.css';
 import {Dropdown} from 'react-bootstrap';
 import {useTranslation} from 'react-i18next';
 import {DropdownArrow} from "./DropdownArrow.tsx";
+import { useState, useEffect } from 'react';
 
 const languages = [
     {code: 'it', name: 'Italiano'},
@@ -11,8 +12,15 @@ const languages = [
 
 const LanguageSelector = ({className}: {className?: string} = {}) => {
     const {i18n} = useTranslation();
+    const [currentLang, setCurrentLang] = useState(i18n.language);
 
-    const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[1];
+    useEffect(() => {
+        const onLangChange = (lng: string) => setCurrentLang(lng);
+        i18n.on('languageChanged', onLangChange);
+        return () => i18n.off('languageChanged', onLangChange);
+    }, [i18n]);
+
+    const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[0];
 
     const handleLanguageChange = (langCode: string) => {
         i18n.changeLanguage(langCode);
