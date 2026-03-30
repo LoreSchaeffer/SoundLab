@@ -1,27 +1,32 @@
-import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
-import {Navigation} from './components/nav/Navigation';
-import './App.css';
-import {HomePage} from "./components/pages/HomePage.tsx";
-import {PlaygroundPage} from "./components/pages/PlaygroundPage.tsx";
-import {MixerPage} from "./components/pages/MixerPage.tsx";
-import {AboutPage} from "./components/pages/AboutPage.tsx";
-import {SequencerPage} from "./components/pages/SequencerPage.tsx";
+import type {ReactNode} from "react";
+import {createBrowserRouter, RouterProvider} from "react-router-dom";
+import Page from "./components/Page.tsx";
+import HomePage from "./pages/HomePage.tsx";
+
+export type Provider = '*';
+
+type AppRoute = {
+    path: string;
+    element: ReactNode;
+    providers?: Provider[];
+}
+
+const locations: AppRoute[] = [
+    {path: '/', element: <HomePage/>},
+    {path: '*', element: <div>Page not found</div>},
+];
+
+const router = createBrowserRouter(locations.map(route => ({
+    path: route.path,
+    element: <Page providers={route.providers}>{route.element}</Page>
+})));
 
 function App() {
+
     return (
-        <Router>
-            <div className="App">
-                <Navigation/>
-                <Routes>
-                    <Route path="/" element={<HomePage/>}/>
-                    <Route path="/playground" element={<PlaygroundPage/>}/>
-                    <Route path="/mixer" element={<MixerPage/>}/>
-                    <Route path="/sequencer" element={<SequencerPage/>}/>
-                    <Route path="/about" element={<AboutPage/>}/>
-                    <Route path="*" element={<HomePage/>}/>
-                </Routes>
-            </div>
-        </Router>
+        <div className="app">
+            <RouterProvider router={router}/>
+        </div>
     );
 }
 
