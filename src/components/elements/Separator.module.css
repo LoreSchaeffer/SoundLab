@@ -1,0 +1,17 @@
+.separatorWrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.separator {
+    border-bottom: 1px solid transparent;
+}
+
+.dark {
+    border-bottom-color: hsl(var(--neutral-50-hsl) / 0.2);
+}
+
+.light {
+    border-bottom-color: hsl(var(--neutral-900-hsl) / 0.5);
+}

@@ -1,20 +1,42 @@
-import {useState} from 'react';
-import Piano from './Piano';
+import {useEffect, useState} from 'react';
+import Piano from './widgets/Piano.tsx';
 import {useMidi} from '../contexts/MidiContext';
 import {useSynth} from '../contexts/SynthContext';
-import CurveEditor, { type Point } from "./forms/CurveEditor.tsx";
+import CurveEditor from "./forms/CurveEditor.tsx";
+import Envelope, {type EnvelopeData} from "./widgets/Envelope.tsx";
+import {generateBezierArray} from "../utils/bezier.ts";
 
 const SynthController = () => {
-    const {
-        isAudioReady,
-        initAudio,
-        playNote: synthPlayNote,
-        releaseNote: synthReleaseNote
-    } = useSynth();
-
+    const {isAudioReady, initAudio, playNote: synthPlayNote, releaseNote: synthReleaseNote, setEnvelope} = useSynth();
     const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
+    const [attackData, setAttackData] = useState<EnvelopeData>({handle1: {x: 0, y: 0}, handle2: {x: 1, y: 1}, time: 100, color: 'red'});
+    const [decayData, setDecayData] = useState<EnvelopeData>({handle1: {x: 0, y: 1}, handle2: {x: 1, y: 0}, time: 1000, color: 'yellow'});
+    const [releaseData, setReleaseData] = useState<EnvelopeData>({handle1: {x: 0, y: 1}, handle2: {x: 1, y: 0}, time: 60, color: 'blue'});
+
+    useEffect(() => {
+        const attackSec = Math.max(0.001, attackData.time / 1000);
+        const decaySec = Math.max(0.001, decayData.time / 1000);
+        const releaseSec = Math.max(0.001, releaseData.time / 1000);
+
+        const attackCurve = generateBezierArray(0.0, 1.0, attackData.handle1, attackData.handle2);
+        const decayCurve = generateBezierArray(1.0, 0.0, decayData.handle1, decayData.handle2);
+        const releaseCurve = generateBezierArray(1.0, 0.0, releaseData.handle1, releaseData.handle2);
+
+        setEnvelope({
+            attack: attackSec,
+            decay: decaySec,
+            sustain: 0.0,
+            release: releaseSec,
+            attackCurve,
+            decayCurve,
+            releaseCurve
+        });
+
+    }, [attackData, decayData, releaseData, setEnvelope]);
 
     const playNote = (note: string, velocity: number = 1) => {
+        if (!isAudioReady) initAudio();
+
         synthPlayNote(note, velocity);
 
         setActiveNotes(prev => {
@@ -36,36 +58,49 @@ const SynthController = () => {
 
     useMidi(playNote, releaseNote);
 
-    const [attackCp1, setAttackCp1] = useState({ x: 0, y: 0 });
-    const [attackCp2, setAttackCp2] = useState({ x: 1, y: 1 });
-
     return (
-        <div className="flex flex-col items-center gap-4 relative">
-            <CurveEditor
-                title="ATTACK"
-                color="red"
-                time={10}
-                startY={0.0}
-                endY={1.0}
-                handle1={attackCp1}
-                handle2={attackCp2}
-                onCurveChange={(newCp1, newCp2) => {
-                    setAttackCp1(newCp1);
-                    setAttackCp2(newCp2);
-                }}
-            />
+        <div>
+            <div style={{display: 'flex', gap: '10px', flexDirection: 'row'}}>
+                <CurveEditor
+                    title="Attack"
+                    color={attackData.color}
+                    time={attackData.time}
+                    startY={0.0}
+                    endY={1.0}
+                    handle1={attackData.handle1}
+                    handle2={attackData.handle2}
+                    onCurveChange={(handle1, handle2) => setAttackData(prev => ({...prev, handle1, handle2}))}
+                    onTimeChange={(newTime) => setAttackData(prev => ({...prev, time: newTime}))}
+                />
+                <CurveEditor
+                    title="Decay"
+                    color={decayData.color}
+                    time={decayData.time}
+                    startY={1.0}
+                    endY={0.0}
+                    handle1={decayData.handle1}
+                    handle2={decayData.handle2}
+                    onCurveChange={(handle1, handle2) => setDecayData(prev => ({...prev, handle1, handle2}))}
+                    onTimeChange={(newTime) => setDecayData(prev => ({...prev, time: newTime}))}
+                />
+                <CurveEditor
+                    title="Release"
+                    color={releaseData.color}
+                    time={releaseData.time}
+                    startY={1.0}
+                    endY={0.0}
+                    handle1={releaseData.handle1}
+                    handle2={releaseData.handle2}
+                    onCurveChange={(handle1, handle2) => setReleaseData(prev => ({...prev, handle1, handle2}))}
+                    onTimeChange={(newTime) => setReleaseData(prev => ({...prev, time: newTime}))}
+                />
+            </div>
 
-            {!isAudioReady && (
-                <div
-                    className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 rounded-lg cursor-pointer backdrop-blur-sm"
-                    onClick={initAudio}
-                >
-                    <div className="text-center">
-                        <h2 className="text-2xl font-bold text-cyan-400 mb-2">Synth Lab</h2>
-                        <p className="text-slate-300">Clicca per attivare l'audio</p>
-                    </div>
-                </div>
-            )}
+            <br/>
+
+            <Envelope attack={attackData} decay={decayData} release={releaseData}/>
+
+            <br/>
 
             <Piano
                 playNote={(n) => playNote(n, 1)}

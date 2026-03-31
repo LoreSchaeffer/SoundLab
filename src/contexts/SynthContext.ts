@@ -5,6 +5,9 @@ export type Envelope = {
     decay: number;
     sustain: number;
     release: number;
+    attackCurve?: number[];
+    decayCurve?: number[];
+    releaseCurve?: number[];
 };
 
 export type SynthContextType = {
@@ -15,7 +18,7 @@ export type SynthContextType = {
     partials: number[];
     setPartials: (newPartials: number[]) => void;
     envelope: Envelope;
-    setAdsr: (newAdsr: Envelope) => void;
+    setEnvelope: (newEnvelope: Envelope) => void;
 }
 
 export const SynthContext = createContext<SynthContextType | null>(null);

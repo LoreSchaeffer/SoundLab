@@ -1,0 +1,55 @@
+:root {
+    --radius: 10px;
+}
+
+.card {
+    width: fit-content;
+    height: fit-content;
+    min-width: 200px;
+    min-height: 100px;
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.05);
+    border-radius: var(--radius);
+    transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.header {
+    position: relative;
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+    padding: var(--padding);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
+    border-radius: 50%;
+    top: calc(var(--padding) - 6px);
+    right: calc(var(--padding) - 6px);
+    cursor: pointer;
+}
+
+.closeButton svg {
+    fill: var(--text-muted);
+    width: 18px;
+    height: 18px;
+    transition: fill 300ms ease, transform 300ms ease;
+}
+
+.closeButton:hover svg {
+    fill: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.body {
+    height: 100%;
+    padding: var(--padding);
+    border-radius: var(--radius);
+}

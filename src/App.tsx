@@ -1,6 +1,6 @@
 import type {ReactNode} from "react";
 import {createBrowserRouter, RouterProvider} from "react-router-dom";
-import Page from "./components/Page.tsx";
+import Page from "./components/templates/Page.tsx";
 import HomePage from "./pages/HomePage.tsx";
 
 export type Provider = '*';

@@ -1,14 +1,14 @@
-import React, {useCallback, useEffect, useRef} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 import styles from './CurveEditor.module.css';
-import type {Color} from "../../types/colors.ts";
-import type {Coord} from "../../types/common.ts";
-import clsx from "clsx";
+import type {Color, Coord} from "../../types";
+import Card from "../elements/Card.tsx";
 
 export type CurveEditorProps = {
     width?: number;
     height?: number;
     title: string;
     color: Color;
+    colored?: boolean;
     time: number;
     startY: number;
     endY: number;
@@ -23,6 +23,7 @@ const CurveEditor = ({
                          height = 200,
                          title,
                          color,
+                         colored = true,
                          time,
                          startY,
                          endY,
@@ -43,6 +44,11 @@ const CurveEditor = ({
         return getComputedStyle(document.documentElement).getPropertyValue(`--${colorName}-500`).trim();
     };
 
+    const computedBackgroundColor = useMemo(() => {
+        const mainColor = getComputedColor(color);
+        return `color-mix(in srgb, ${mainColor} 8%, #000000)`;
+    }, [color]);
+
     const toCanvas = useCallback((p: Coord) => ({
         x: p.x * width,
         y: height - (p.y * height)
@@ -57,7 +63,7 @@ const CurveEditor = ({
         ctx.clearRect(0, 0, width, height);
 
         // 1. Background Grid
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.strokeStyle = colored ? `color-mix(in srgb, ${mainColor} 20%, transparent)` : 'rgba(255, 255, 255, 0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(width / 2, 0);
@@ -103,7 +109,7 @@ const CurveEditor = ({
         ctx.fill();
 
         // 6. Interactive Bezier Handles
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = computedBackgroundColor;
         ctx.lineWidth = 2;
 
         ctx.beginPath();
@@ -116,7 +122,7 @@ const CurveEditor = ({
         ctx.fill();
         ctx.stroke();
 
-    }, [color, startY, endY, handle1, handle2, width, height, toCanvas]);
+    }, [color, width, height, colored, toCanvas, startY, endY, handle1, handle2, computedBackgroundColor]);
 
     useEffect(() => {
         if (canvasRef.current) {
@@ -172,12 +178,9 @@ const CurveEditor = ({
             const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
 
             const deltaX = clientX - startDragX.current;
-            const sensitivity = 0.005;
+            const sensitivity = 1;
 
-            let newTime = startTimeVal.current + (deltaX * sensitivity);
-            newTime = Math.max(0.01, Math.min(10.0, newTime));
-
-            onTimeChange?.(newTime);
+            onTimeChange?.(Math.max(0, startTimeVal.current + (deltaX * sensitivity)));
         }
     }, [handle1, handle2, onCurveChange, onTimeChange, getMathPos]);
 
@@ -213,54 +216,64 @@ const CurveEditor = ({
 
     const handleTimeWheel = (e: React.WheelEvent) => {
         e.preventDefault();
-        const step = 0.01;
+        const step = 1;
         const direction = e.deltaY < 0 ? 1 : -1;
 
-        let newTime = time + (direction * step);
-        newTime = Math.max(0.01, Math.min(10.0, newTime));
-
-        onTimeChange?.(newTime);
+        onTimeChange?.(Math.max(0, time + (direction * step)));
     };
 
     return (
-        <div
-            className={clsx(styles.container, styles[color])}
+        <Card
+            elevation={4}
+            className={styles.container}
             style={{width: width + 26}}
         >
-            <div className={styles.header}>
-                <span className={styles.title} style={{color: `var(--${color}-500)`}}>
+            <Card.Header className={styles.header}>
+                <span
+                    className={styles.title}
+                    style={{color: `var(--${color}-500)`}}
+                >
                     {title}
                 </span>
-            </div>
 
-            <div className={styles.canvasWrapper} style={{width, height}}>
-                <canvas
-                    ref={canvasRef}
-                    width={width}
-                    height={height}
-                    className={styles.canvas}
-                    onMouseDown={handleCanvasMouseDown}
-                    onTouchStart={handleCanvasMouseDown}
-                    style={{cursor: 'crosshair'}}
-                />
-            </div>
-
-            <div className={styles.info}>
-                <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Time</span>
-                    {/* Scrubbable value */}
+                <div className={styles.info}>
+                    <span
+                        className={styles.infoLabel}
+                        style={{color: `var(--${color}-500)`}}
+                    >
+                        Time
+                    </span>
                     <span
                         className={styles.infoVal}
-                        style={{cursor: 'ew-resize', userSelect: 'none'}}
                         onMouseDown={handleTimeMouseDown}
                         onTouchStart={handleTimeMouseDown}
                         onWheel={handleTimeWheel}
                     >
-                        {Math.round(time * 1000)} ms
+                        {time} ms
                     </span>
                 </div>
-            </div>
-        </div>
+            </Card.Header>
+            <Card.Body>
+                <div
+                    className={styles.canvasWrapper}
+                    style={{
+                        width: width,
+                        height: height,
+                        backgroundColor: colored ? computedBackgroundColor : '#000000'
+                    }}
+                >
+                    <canvas
+                        ref={canvasRef}
+                        width={width}
+                        height={height}
+                        className={styles.canvas}
+                        onMouseDown={handleCanvasMouseDown}
+                        onTouchStart={handleCanvasMouseDown}
+                        style={{cursor: 'crosshair'}}
+                    />
+                </div>
+            </Card.Body>
+        </Card>
     );
 };
 

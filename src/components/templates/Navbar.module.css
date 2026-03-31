@@ -1,0 +1,6 @@
+.navbar {
+    height: var(--nav-height);
+    background-color: var(--background-tertiary);
+    z-index: 500;
+    flex-shrink: 0;
+}
