@@ -1,0 +1,160 @@
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+}
+
+.title {
+    font: var(--h5);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hiddenInput {
+    display: none;
+}
+
+.gridContainer {
+    display: grid;
+    grid-template-columns: 18px 28px 1fr;
+    grid-template-rows: 18px 1fr 24px;
+    position: relative;
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
+    border-radius: 4px;
+    background-color: var(--black);
+    overflow: hidden;
+}
+
+.corner {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.15);
+}
+
+.hZoomArea {
+    grid-column: 3;
+    grid-row: 1;
+    position: relative;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+}
+
+.vZoomArea {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    background-color: var(--background-secondary);
+    border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+}
+
+.zoomTrack {
+    position: absolute;
+    border-radius: 2px;
+    cursor: grab;
+    transition: background-color 0.2s;
+}
+
+.zoomTrack:active {
+    cursor: grabbing;
+}
+
+.hHandleLeft, .hHandleRight {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+}
+
+.hHandleLeft {
+    left: 0;
+    border-radius: 2px 0 0 2px;
+}
+
+.hHandleRight {
+    right: 0;
+    border-radius: 0 2px 2px 0;
+}
+
+.vHandleTop, .vHandleBottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+}
+
+.vHandleTop {
+    top: 0;
+    border-radius: 2px 2px 0 0;
+}
+
+.vHandleBottom {
+    bottom: 0;
+    border-radius: 0 0 2px 2px;
+}
+
+.yAxisCanvas {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: var(--background-primary);
+    border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.15);
+}
+
+.mainArea {
+    grid-column: 3;
+    grid-row: 2 / 4;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+}
+
+.mainCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--neutral-400);
+    font-family: monospace;
+    font-weight: bold;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.bottomCorner {
+    grid-column: 1;
+    grid-row: 3;
+    background-color: var(--background-secondary);
+    border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+}

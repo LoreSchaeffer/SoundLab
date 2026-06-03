@@ -1,5 +1,5 @@
 import {type FC, type ReactNode, useCallback, useEffect, useRef, useState} from "react";
-import {Compressor, Gain, now, Oscillator, start} from "tone";
+import {Compressor, Gain, Limiter, now, Oscillator, start} from "tone";
 import {type Envelope, SynthContext} from "./SynthContext.ts";
 
 const NUM_VOICES = 8;
@@ -21,29 +21,40 @@ export const SynthProvider: FC<SynthProviderProps> = ({children}) => {
     const [partials, setPartialsState] = useState<number[]>(() => {
         const initialPartials = new Array(NUM_HARMONICS).fill(0);
         initialPartials[0] = 1.0;
+        initialPartials[1] = 2.0;
         return initialPartials;
     });
 
     const [envelope, setEnvelope] = useState<Envelope>({attack: 0.1, decay: 3.5, sustain: 0.0, release: 1.0});
 
     const voicesRef = useRef<Voice[]>([]);
-    const compressorRef = useRef<Compressor | null>(null);
+
+    const masterCompressorRef = useRef<Compressor | null>(null);
+    const masterLimiterRef = useRef<Limiter | null>(null);
 
     const initAudio = useCallback(async () => {
         if (isAudioReady) return;
 
         await start();
 
-        compressorRef.current = new Compressor(-20, 3).toDestination();
+        masterLimiterRef.current = new Limiter(-1).toDestination();
+
+        masterCompressorRef.current = new Compressor({
+            threshold: -18,
+            ratio: 8,
+            knee: 12,
+            attack: 0.003,
+            release: 0.25
+        }).connect(masterLimiterRef.current);
 
         const newVoices: Voice[] = [];
         for (let i = 0; i < NUM_VOICES; i++) {
-            const gainNode = new Gain(0).connect(compressorRef.current);
+            const gainNode = new Gain(0).connect(masterCompressorRef.current);
 
             const oscillator = new Oscillator({
                 type: "custom",
                 partials: partials,
-                volume: -10
+                volume: -12
             }).connect(gainNode).start();
 
             newVoices.push({oscillator, gainNode, active: false, note: null});
@@ -156,7 +167,8 @@ export const SynthProvider: FC<SynthProviderProps> = ({children}) => {
                 v.oscillator.dispose();
                 v.gainNode.dispose();
             });
-            compressorRef.current?.dispose();
+            masterCompressorRef.current?.dispose();
+            masterLimiterRef.current?.dispose();
         };
     }, []);
 

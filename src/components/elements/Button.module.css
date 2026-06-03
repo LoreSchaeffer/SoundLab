@@ -1,0 +1,44 @@
+:root {
+    --btn-color: var(--white);
+}
+
+.btn {
+    background-color: var(--background-secondary);
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
+    color: var(--neutral-100);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    outline: none;
+}
+
+.btn:hover:not(:disabled) {
+    background-color: var(--background-tertiary);
+    border-color: var(--btn-color);
+    color: var(--btn-color);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn.active {
+    background-color: color-mix(in srgb, var(--btn-color) 20%, transparent);
+    border-color: var(--btn-color);
+    color: var(--btn-color);
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}

@@ -4,16 +4,23 @@ import type {Color, Coord} from "../../types";
 import Card from "../elements/Card.tsx";
 
 export type EnvelopeData = {
-    handle1: Coord;
-    handle2: Coord;
     time: number;
     color: Color;
-}
+    handle1?: Coord;
+    handle2?: Coord;
+    points?: Coord[];
+};
+
+export type TriggerEvent = {
+    type: 'attack' | 'release';
+    timestamp: number;
+};
 
 export type EnvelopeVisualizerProps = {
     attack: EnvelopeData;
     decay: EnvelopeData;
     release: EnvelopeData;
+    triggerEvent?: TriggerEvent | null;
     width?: number;
     height?: number;
 }
@@ -22,66 +29,121 @@ const EnvelopeVisualizer = ({
                                 attack,
                                 decay,
                                 release,
+                                triggerEvent,
                                 width = 800,
                                 height = 200
                             }: EnvelopeVisualizerProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const animationRef = useRef<number | null>(null);
 
-    const getComputedColor = (colorName: Color) => {
+    const getComputedColor = useCallback((colorName: Color) => {
         if (typeof window === 'undefined') return '#ffffff';
         return getComputedStyle(document.documentElement).getPropertyValue(`--${colorName}-500`).trim();
+    }, []);
+
+    const getBezierPoint = (t: number, p0: number, p1: number, p2: number, p3: number) => {
+        const u = 1 - t;
+        return (u * u * u * p0) + (3 * u * u * t * p1) + (3 * u * t * t * p2) + (t * t * t * p3);
     };
 
-    const drawSegment = useCallback((
-        ctx: CanvasRenderingContext2D,
-        startX: number,
-        segmentWidth: number,
-        startLevel: number,
-        endLevel: number,
-        h1: Coord,
-        h2: Coord,
-        colorStr: string
-    ) => {
+    const getMSEGPoint = (t: number, points: Coord[]): Coord => {
+        if (points.length === 0) return {x: 0, y: 0};
+        if (t <= 0) return points[0];
+        if (t >= 1) return points[points.length - 1];
+
+        let p1 = points[0];
+        let p2 = points[points.length - 1];
+
+        for (let i = 0; i < points.length - 1; i++) {
+            if (t >= points[i].x && t <= points[i + 1].x) {
+                p1 = points[i];
+                p2 = points[i + 1];
+                break;
+            }
+        }
+
+        if (p1.x === p2.x) return p1;
+
+        const ratio = (t - p1.x) / (p2.x - p1.x);
+        return {
+            x: p1.x + ratio * (p2.x - p1.x),
+            y: p1.y + ratio * (p2.y - p1.y)
+        };
+    };
+
+    const drawSegment = useCallback((ctx: CanvasRenderingContext2D, startX: number, segmentWidth: number, startLevel: number, endLevel: number, data: EnvelopeData, colorStr: string) => {
         if (segmentWidth <= 0) return;
 
-        // Start/End point
-        const p0x = startX;
-        const p0y = height - (startLevel * height);
-        const p3x = startX + segmentWidth;
-        const p3y = height - (endLevel * height);
-
-        // Dynamically mapped handles
-        const c1x = startX + (h1.x * segmentWidth);
-        const c1y = height - (h1.y * height);
-        const c2x = startX + (h2.x * segmentWidth);
-        const c2y = height - (h2.y * height);
-
-        // Drawing curve
         ctx.strokeStyle = colorStr;
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(p0x, p0y);
-        ctx.bezierCurveTo(c1x, c1y, c2x, c2y, p3x, p3y);
-        ctx.stroke();
 
-        // Initial Node
-        ctx.fillStyle = colorStr;
-        ctx.beginPath();
-        ctx.arc(p0x, p0y, 2, 0, Math.PI * 2);
-        ctx.fill();
+        if (data.points && data.points.length > 0) {
+            // MSEG
+            data.points.forEach((p, i) => {
+                const cx = startX + (p.x * segmentWidth);
+                const cy = height - (p.y * height);
+                if (i === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            });
+            ctx.stroke();
 
-        // Final Node
-        ctx.fillStyle = colorStr;
-        ctx.beginPath();
-        ctx.arc(p3x, p3y, 2, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = colorStr;
+            data.points.forEach((p) => {
+                const cx = startX + (p.x * segmentWidth);
+                const cy = height - (p.y * height);
+                ctx.beginPath();
+                ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+        } else if (data.handle1 && data.handle2) {
+            // BEZIER
+            const p0x = startX;
+            const p0y = height - (startLevel * height);
+            const p3x = startX + segmentWidth;
+            const p3y = height - (endLevel * height);
+
+            const c1x = startX + (data.handle1.x * segmentWidth);
+            const c1y = height - (data.handle1.y * height);
+            const c2x = startX + (data.handle2.x * segmentWidth);
+            const c2y = height - (data.handle2.y * height);
+
+            ctx.moveTo(p0x, p0y);
+            ctx.bezierCurveTo(c1x, c1y, c2x, c2y, p3x, p3y);
+            ctx.stroke();
+
+            ctx.fillStyle = colorStr;
+            ctx.beginPath();
+            ctx.arc(p0x, p0y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(p3x, p3y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }, [height]);
 
-    const draw = useCallback(() => {
-        const ctx = ctxRef.current;
-        if (!ctx) return;
+    const getMappedDot = useCallback((t: number, data: EnvelopeData, startX: number, w: number, startLevel: number, endLevel: number) => {
+        if (data.points && data.points.length > 0) {
+            const pt = getMSEGPoint(t, data.points);
+            return {
+                dotX: startX + pt.x * w,
+                dotY: height - pt.y * height
+            };
+        } else if (data.handle1 && data.handle2) {
+            return {
+                dotX: getBezierPoint(t, startX, startX + data.handle1.x * w, startX + data.handle2.x * w, startX + w),
+                dotY: getBezierPoint(t, height - startLevel * height, height - data.handle1.y * height, height - data.handle2.y * height, height - endLevel * height)
+            };
+        }
+        return {dotX: startX, dotY: height};
+    }, [height]);
+
+    const renderFrame = useCallback((currentTime: number) => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!ctx || !canvas) return;
 
         ctx.clearRect(0, 0, width, height);
 
@@ -92,17 +154,17 @@ const EnvelopeVisualizer = ({
         const totalTime = attack.time + decay.time + release.time;
         const safeTotal = totalTime > 0 ? totalTime : 1;
 
-        const wA = (attack.time / safeTotal) * width;
-        const wD = (decay.time / safeTotal) * width;
-        const wR = (release.time / safeTotal) * width;
+        const MIN_PCT = 0.05;
+        const minPixels = width * MIN_PCT;
+        const availablePixels = width - (minPixels * 3);
 
-        // Attack
-        drawSegment(ctx, 0, wA, 0.0, 1.0, attack.handle1, attack.handle2, colorA);
+        const wA = minPixels + ((attack.time / safeTotal) * availablePixels);
+        const wD = minPixels + ((decay.time / safeTotal) * availablePixels);
+        const wR = minPixels + ((release.time / safeTotal) * availablePixels);
 
-        // Decay
-        drawSegment(ctx, wA, wD, 1.0, 0.0, decay.handle1, decay.handle2, colorD);
+        drawSegment(ctx, 0, wA, 0.0, 1.0, attack, colorA);
+        drawSegment(ctx, wA, wD, 1.0, 0.0, decay, colorD);
 
-        // Separator
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
@@ -112,16 +174,58 @@ const EnvelopeVisualizer = ({
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Release
-        drawSegment(ctx, wA + wD, wR, 1.0, 0.0, release.handle1, release.handle2, colorR);
-    }, [attack, decay, release, width, height, drawSegment]);
+        drawSegment(ctx, wA + wD, wR, 1.0, 0.0, release, colorR);
+
+        if (triggerEvent) {
+            const elapsed = currentTime - triggerEvent.timestamp;
+            let dotX: number | null = null;
+            let dotY: number | null = null;
+
+            if (triggerEvent.type === 'attack') {
+                if (elapsed <= attack.time) {
+                    const t = attack.time > 0 ? Math.max(0, Math.min(1, elapsed / attack.time)) : 1;
+                    const res = getMappedDot(t, attack, 0, wA, 0.0, 1.0);
+                    dotX = res.dotX;
+                    dotY = res.dotY;
+                } else if (elapsed <= attack.time + decay.time) {
+                    const t = decay.time > 0 ? Math.max(0, Math.min(1, (elapsed - attack.time) / decay.time)) : 1;
+                    const res = getMappedDot(t, decay, wA, wD, 1.0, 0.0);
+                    dotX = res.dotX;
+                    dotY = res.dotY;
+                } else {
+                    dotX = wA + wD;
+                    dotY = height;
+                }
+            } else if (triggerEvent.type === 'release') {
+                if (elapsed <= release.time) {
+                    const t = release.time > 0 ? Math.max(0, Math.min(1, elapsed / release.time)) : 1;
+                    const res = getMappedDot(t, release, wA + wD, wR, 1.0, 0.0);
+                    dotX = res.dotX;
+                    dotY = res.dotY;
+                }
+            }
+
+            if (dotX !== null && dotY !== null) {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }, [attack, decay, release, width, height, drawSegment, getComputedColor, triggerEvent, getMappedDot]);
 
     useEffect(() => {
-        if (canvasRef.current) {
-            ctxRef.current = canvasRef.current.getContext('2d');
-            draw();
-        }
-    }, [draw]);
+        const loop = (time: number) => {
+            renderFrame(time);
+            animationRef.current = requestAnimationFrame(loop);
+        };
+
+        animationRef.current = requestAnimationFrame(loop);
+
+        return () => {
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
+    }, [renderFrame]);
 
     return (
         <Card elevation={4} className={styles.container} style={{width: width + 26}}>

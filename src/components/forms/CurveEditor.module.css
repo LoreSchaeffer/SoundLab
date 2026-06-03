@@ -31,6 +31,50 @@
     user-select: none;
 }
 
+.infoVal.input {
+    background-color: var(--background-secondary);
+    cursor: text;
+    padding: 0;
+    outline: none;
+    border: none;
+    border-radius: 4px;
+    width: 40px;
+    text-align: right;
+    margin-right: 7px;
+    -moz-appearance: textfield;
+}
+
+.infoVal.input::-webkit-outer-spin-button,
+.infoVal.input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.headerControls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modeToggle {
+    background: transparent;
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
+    color: var(--neutral-400);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    padding: 3px 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: 800;
+    font-family: monospace;
+    transition: all 0.2s ease;
+}
+
+.modeToggle:hover {
+    border-color: hsl(var(--neutral-50-hsl) / 0.5);
+    color: var(--neutral-100);
+}
+
 .canvasWrapper {
     position: relative;
     border: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
