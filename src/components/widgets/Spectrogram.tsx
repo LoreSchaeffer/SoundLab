@@ -60,7 +60,7 @@ export type SpectrogramProps = {
     onAudioLoaded?: (buffer: AudioBuffer) => void;
 };
 
-const Spectrogram = ({width = '100%', height = 350, color = 'cyan', onPlay, onAudioLoaded}: SpectrogramProps) => {
+const Spectrogram = ({width = '100%', height = 350, color = 'blue', onPlay, onAudioLoaded}: SpectrogramProps) => {
     const mainCanvasRef = useRef<HTMLCanvasElement>(null);
     const yAxisCanvasRef = useRef<HTMLCanvasElement>(null);
     const hZoomRef = useRef<HTMLDivElement>(null);

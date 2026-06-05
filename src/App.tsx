@@ -3,6 +3,7 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import Page from "./components/templates/Page.tsx";
 import HomePage from "./pages/HomePage.tsx";
 import PresetGeneratorPage from "./pages/PresetGeneratorPage.tsx";
+import PlaygroundPage from "./pages/PlaygroundPage.tsx";
 
 export type Provider = 'synth' | 'preset' | 'midi';
 
@@ -14,6 +15,7 @@ type AppRoute = {
 
 const locations: AppRoute[] = [
     {path: '/', element: <HomePage/>, providers: ['synth', 'preset', 'midi']},
+    {path: '/playground', element: <PlaygroundPage/>, providers: ['synth', 'preset']},
     {path: '/preset-generator', element: <PresetGeneratorPage/>, providers: ['synth', 'preset', 'midi']},
     {path: '*', element: <div>Page not found</div>},
 ];

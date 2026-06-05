@@ -11,7 +11,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const Button = ({
                     variant = 'default',
-                    color = 'cyan',
+                    color = 'blue',
                     icon,
                     children,
                     className,

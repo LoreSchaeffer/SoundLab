@@ -1,0 +1,66 @@
+:root {
+    --select-color: var(--white);
+}
+
+.wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.icon {
+    position: absolute;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.select {
+    width: 100%;
+    appearance: none;
+    background-color: var(--background-secondary);
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
+    color: var(--text-primary);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: var(--main-font);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.select.hasIcon {
+    padding: 10px 36px 10px 36px;
+}
+
+.select.noIcon {
+    padding: 10px 36px 10px 12px;
+}
+
+.select:hover {
+    background-color: var(--background-tertiary);
+}
+
+.select:focus {
+    border-color: var(--select-color);
+    background-color: color-mix(in srgb, var(--select-color) 10%, var(--background-secondary));
+}
+
+.wrapper:focus-within .icon {
+    color: var(--select-color);
+}
+
+.caret {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+}

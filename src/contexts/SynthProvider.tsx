@@ -1,187 +1,75 @@
-import {type FC, type ReactNode, useCallback, useEffect, useRef, useState} from "react";
-import {Compressor, Gain, Limiter, now, Oscillator, start} from "tone";
-import {type Envelope, SynthContext} from "./SynthContext.ts";
+import {type PropsWithChildren, useCallback, useState} from "react";
+import {SynthContext} from "./SynthContext.ts";
+import type {InstrumentConfig} from "../types/audio.ts";
+import {AudioEngine} from "../core/AudioEngine.ts";
 
-const NUM_VOICES = 8;
-const NUM_HARMONICS = 16;
-
-type Voice = {
-    oscillator: Oscillator;
-    gainNode: Gain;
-    active: boolean;
-    note: string | null;
-};
-
-interface SynthProviderProps {
-    children: ReactNode;
-}
-
-export const SynthProvider: FC<SynthProviderProps> = ({children}) => {
+export const SynthProvider = ({children}: PropsWithChildren) => {
     const [isAudioReady, setIsAudioReady] = useState(false);
-    const [partials, setPartialsState] = useState<number[]>(() => {
-        const initialPartials = new Array(NUM_HARMONICS).fill(0);
-        initialPartials[0] = 1.0;
-        initialPartials[1] = 2.0;
-        return initialPartials;
-    });
-
-    const [envelope, setEnvelope] = useState<Envelope>({attack: 0.1, decay: 3.5, sustain: 0.0, release: 1.0});
-
-    const voicesRef = useRef<Voice[]>([]);
-
-    const masterCompressorRef = useRef<Compressor | null>(null);
-    const masterLimiterRef = useRef<Limiter | null>(null);
+    const [masterVolume, setMasterVolumeState] = useState(0.8);
+    const [channels, setChannelsState] = useState<Record<string, InstrumentConfig>>({});
 
     const initAudio = useCallback(async () => {
-        if (isAudioReady) return;
-
-        await start();
-
-        masterLimiterRef.current = new Limiter(-1).toDestination();
-
-        masterCompressorRef.current = new Compressor({
-            threshold: -18,
-            ratio: 8,
-            knee: 12,
-            attack: 0.003,
-            release: 0.25
-        }).connect(masterLimiterRef.current);
-
-        const newVoices: Voice[] = [];
-        for (let i = 0; i < NUM_VOICES; i++) {
-            const gainNode = new Gain(0).connect(masterCompressorRef.current);
-
-            const oscillator = new Oscillator({
-                type: "custom",
-                partials: partials,
-                volume: -12
-            }).connect(gainNode).start();
-
-            newVoices.push({oscillator, gainNode, active: false, note: null});
-        }
-
-        voicesRef.current = newVoices;
+        await AudioEngine.init();
         setIsAudioReady(true);
-    }, [isAudioReady, partials]);
+    }, []);
 
-    const playNote = useCallback((note: string, velocity: number = 1) => {
-        if (!isAudioReady || voicesRef.current.length === 0) return;
-        if (voicesRef.current.some(v => v.note === note && v.active)) return;
+    const setMasterVolume = useCallback((vol: number) => {
+        setMasterVolumeState(vol);
+        AudioEngine.setMasterVolume(vol);
+    }, []);
 
-        const time = now() + 0.02;
-        let freeVoiceIndex = voicesRef.current.findIndex(v => !v.active);
+    const registerChannel = useCallback((config: InstrumentConfig) => {
+        AudioEngine.createChannel(config);
+        setChannelsState(prev => ({...prev, [config.id]: config}));
+    }, []);
 
-        if (freeVoiceIndex === -1) {
-            freeVoiceIndex = 0;
-            const voiceToSteal = voicesRef.current[freeVoiceIndex];
-            const gainToSteal = voiceToSteal.gainNode.gain;
+    const unregisterChannel = useCallback((id: string) => {
+        AudioEngine.removeChannel(id);
+        setChannelsState(prev => {
+            const newState = {...prev};
+            delete newState[id];
+            return newState;
+        });
+    }, []);
 
-            const currentVal = gainToSteal.value;
-            gainToSteal.cancelScheduledValues(time - 0.01);
-            gainToSteal.setValueAtTime(currentVal, time - 0.01);
-            gainToSteal.linearRampToValueAtTime(0, time - 0.005);
-        }
-
-        const voiceToPlay = voicesRef.current[freeVoiceIndex];
-
-        voicesRef.current[freeVoiceIndex] = {
-            ...voiceToPlay,
-            active: true,
-            note: note
-        };
-
-        const gainParam = voiceToPlay.gainNode.gain;
-
-        voiceToPlay.oscillator.frequency.setValueAtTime(note, time);
-
-        const currentGain = gainParam.value;
-        gainParam.cancelScheduledValues(time);
-        gainParam.setValueAtTime(currentGain, time);
-
-        if (envelope.attackCurve && envelope.attackCurve.length > 0) {
-            const attackValues = envelope.attackCurve.map(
-                p => currentGain + p * (velocity - currentGain)
-            );
-            gainParam.setValueCurveAtTime(attackValues, time, envelope.attack);
-        } else {
-            gainParam.linearRampToValueAtTime(velocity, time + envelope.attack);
-        }
-
-        const decayStartTime = time + envelope.attack;
-        if (envelope.decayCurve && envelope.decayCurve.length > 0) {
-            const decayValues = envelope.decayCurve.map(v => v * velocity);
-            gainParam.setValueCurveAtTime(decayValues, decayStartTime, envelope.decay);
-        } else {
-            gainParam.exponentialRampToValueAtTime(Math.max(envelope.sustain, 0.001), decayStartTime + envelope.decay);
-        }
-    }, [isAudioReady, envelope]);
-
-    const releaseNote = useCallback((note: string) => {
-        if (!isAudioReady || voicesRef.current.length === 0) return;
-
-        const voiceIndex = voicesRef.current.findIndex(v => v.note === note && v.active);
-
-        if (voiceIndex !== -1) {
-            const voiceToRelease = voicesRef.current[voiceIndex];
-            const gainParam = voiceToRelease.gainNode.gain;
-            const time = now() + 0.02;
-            const currentGain = gainParam.value;
-
-            gainParam.cancelScheduledValues(time);
-            gainParam.setValueAtTime(currentGain, time);
-
-            if (envelope.releaseCurve && envelope.releaseCurve.length > 0) {
-                const scaledRelease = envelope.releaseCurve.map(v => v * currentGain);
-                gainParam.setValueCurveAtTime(scaledRelease, time, envelope.release);
-            } else {
-                gainParam.exponentialRampToValueAtTime(0.0001, time + envelope.release);
-            }
-
-            gainParam.setValueAtTime(0, time + envelope.release + 0.01);
-
-            voicesRef.current[voiceIndex] = {
-                ...voiceToRelease,
-                active: false,
-                note: null
-            };
-        }
-    }, [isAudioReady, envelope]);
-
-    const setPartials = useCallback((newPartials: number[]) => {
-        setPartialsState(newPartials);
-        if (voicesRef.current.length > 0) {
-            voicesRef.current.forEach(v => {
-                v.oscillator.partials = [...newPartials];
-            });
+    const updateChannelConfig = useCallback((id: string, updates: Partial<InstrumentConfig>) => {
+        const channel = AudioEngine.getChannel(id);
+        if (channel) {
+            if (updates.volume !== undefined) channel.setVolume(updates.volume);
+            channel.updateConfig(updates);
+            setChannelsState(prev => ({
+                ...prev,
+                [id]: {...prev[id], ...updates}
+            }));
         }
     }, []);
 
-    const setEnvelopeCallback = useCallback((newEnvelope: Envelope) => {
-        setEnvelope(newEnvelope);
+    const playNote = useCallback((channelId: string, note: string | number, velocity: number = 1) => {
+        AudioEngine.getChannel(channelId)?.playNote(note, velocity);
     }, []);
 
-    useEffect(() => {
-        return () => {
-            voicesRef.current.forEach(v => {
-                v.oscillator.stop();
-                v.oscillator.dispose();
-                v.gainNode.dispose();
-            });
-            masterCompressorRef.current?.dispose();
-            masterLimiterRef.current?.dispose();
-        };
+    const releaseNote = useCallback((channelId: string, note: string | number) => {
+        AudioEngine.getChannel(channelId)?.releaseNote(note);
+    }, []);
+
+    const updateNoteFrequency = useCallback((channelId: string, oldNote: string | number, newNote: string | number) => {
+        const channel = AudioEngine.getChannel(channelId);
+        if (channel) channel.updateNoteFrequency(oldNote, newNote);
     }, []);
 
     return (
         <SynthContext.Provider value={{
             isAudioReady,
             initAudio,
+            masterVolume,
+            setMasterVolume,
+            channels,
+            registerChannel,
+            unregisterChannel,
+            updateChannelConfig,
             playNote,
             releaseNote,
-            partials,
-            setPartials,
-            envelope,
-            setEnvelope: setEnvelopeCallback
+            updateNoteFrequency
         }}>
             {children}
         </SynthContext.Provider>

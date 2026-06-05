@@ -16,8 +16,6 @@ const Page = ({providers = [], children}: PageProps) => {
     if (providers.includes('preset')) content = <PresetProvider>{content}</PresetProvider>;
     if (providers.includes('synth')) content = <SynthProvider>{content}</SynthProvider>;
 
-    console.log(providers.includes('synth'), providers.includes('preset'), providers.includes('midi'))
-
     return (
         <>
             <Navbar/>
