@@ -29,7 +29,7 @@ const WaveformVisualizer = ({
                                 title = "Waveform Viewer",
                                 titleColor = "cyan",
                                 waves,
-                                showToggles = true,
+                                showToggles = false,
                                 showSumWave = false,
                                 sumWaveColor = "white",
                                 className,

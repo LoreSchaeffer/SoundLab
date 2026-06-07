@@ -1,3 +1,7 @@
+:root {
+    --canvasMargin: 5px;
+}
+
 .container {
     display: flex;
     flex-direction: column;
@@ -31,13 +35,14 @@
 
 .canvasWrapper {
     position: relative;
-    width: 100%;
+    width: calc(100% - (var(--canvasMargin) * 2));
     flex: 1;
     min-height: 150px;
     background-color: var(--black);
     border-radius: 4px;
     border: 1px solid hsl(var(--neutral-50-hsl) / 0.15);
     overflow: hidden;
+    margin: var(--canvasMargin);
 }
 
 .canvas {
@@ -55,5 +60,5 @@
     align-items: center;
     gap: 8px;
     padding: 10px;
-    margin-top: 6px;
+    margin-top: 1px;
 }

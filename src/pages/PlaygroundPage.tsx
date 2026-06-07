@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from "react";
 import styles from "./PlaygroundPage.module.css";
+import React, {useEffect, useState} from "react";
 import {useSynth} from "../contexts/SynthContext.ts";
 import Card from "../components/elements/Card.tsx";
 import {MdMusicNote, MdPlayArrow, MdShowChart, MdStop, MdTune, MdVolumeUp, MdWaves} from "react-icons/md";
@@ -8,56 +8,72 @@ import Button from "../components/elements/Button.tsx";
 import {commonNotes} from "../types/music.ts";
 import {createDefaultInstrument} from "../utils/audio.ts";
 import WaveformVisualizer, {type WaveDefinition} from "../components/widgets/WaveformVisualizer.tsx";
+import {usePreset} from "../contexts/PresetContext.ts";
+import Slider from "../components/forms/Slider.tsx";
+import clsx from "clsx";
 
 const getItalianNoteName = (noteName: string) => {
     const noteMap: Record<string, string> = {
-        'C': 'Do', 'D': 'Re', 'E': 'Mi', 'F': 'Fa', 'G': 'Sol', 'A': 'La', 'B': 'Si'
+        'C': 'Do',
+        'D': 'Re',
+        'E': 'Mi',
+        'F': 'Fa',
+        'G': 'Sol',
+        'A': 'La',
+        'B': 'Si'
     };
+
     return noteMap[noteName] || noteName;
 };
 
 const PLAYGROUND_CHANNEL_ID = 'playground-synth';
 
 const PlaygroundPage = () => {
-    // --- STATI LOCALI UI ---
+    const {isAudioReady, initAudio, registerChannel, unregisterChannel, updateChannelConfig, playNote, releaseNote, updateNoteFrequency} = useSynth();
+    const {presets} = usePreset();
+
     const [frequency, setFrequency] = useState(440);
-    const [amplitude, setAmplitude] = useState(0.8);
+    const [amplitude, setAmplitude] = useState(0.5);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [oscillatorType, setOscillatorType] = useState<OscillatorType>('sine');
 
-    // Per il playground, usiamo armoniche standard fisse se si seleziona "custom"
-    const [partials] = useState<number[]>([1.0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-
-    // --- MOTORE AUDIO ---
-    const {
-        isAudioReady,
-        initAudio,
-        registerChannel,
-        unregisterChannel,
-        updateChannelConfig,
-        playNote,
-        releaseNote,
-        updateNoteFrequency,
-    } = useSynth();
+    const [selectedPresetId, setSelectedPresetId] = useState<string>(presets[0]?.id || '');
+    const [oscillatorType, setOscillatorType] = useState<OscillatorType>(presets[0]?.oscillatorType || 'sine');
+    const [partials, setPartials] = useState<number[]>(presets[0]?.partials || [1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
     useEffect(() => {
         const config = createDefaultInstrument(PLAYGROUND_CHANNEL_ID, 'Playground');
 
         config.envelope = {attack: 0.05, decay: 0.0, sustain: 1.0, release: 0.1};
-        config.oscillatorType = 'sine';
-        config.volume = 0.8;
+        config.oscillatorType = oscillatorType;
+        config.partials = partials;
+        config.volume = amplitude;
 
         registerChannel(config);
 
         return () => {
             unregisterChannel(PLAYGROUND_CHANNEL_ID);
         };
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [registerChannel, unregisterChannel]);
 
-    const handleWaveformChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const type = e.target.value as OscillatorType;
-        setOscillatorType(type);
-        updateChannelConfig(PLAYGROUND_CHANNEL_ID, {oscillatorType: type});
+    const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const presetId = e.target.value;
+        setSelectedPresetId(presetId);
+
+        const preset = presets.find(p => p.id === presetId);
+
+        if (preset) {
+            const newType = preset.oscillatorType || 'custom';
+
+            setPartials(preset.partials);
+            setOscillatorType(newType);
+
+            updateChannelConfig(PLAYGROUND_CHANNEL_ID, {
+                oscillatorType: newType,
+                partials: preset.partials
+            });
+        }
     };
 
     const handleFrequencyChange = (newFreq: number) => {
@@ -82,36 +98,18 @@ const PlaygroundPage = () => {
         setIsPlaying(false);
     };
 
-
-    const waveformOptions = [
-        {value: 'sine', label: 'Sinusoidale'},
-        {value: 'square', label: 'Quadrata'},
-        {value: 'triangle', label: 'Triangolare'},
-        {value: 'sawtooth', label: 'Dente di sega'},
-        {value: 'custom', label: 'Preset Custom'}
-    ];
-
-
+    const presetOptions = presets.map(p => ({value: p.id, label: p.name}));
     const currentWaves: WaveDefinition[] = [
         {
-            id: 'play-wave',
-            label: 'Segnale Master',
+            id: 'wave',
+            label: presets.find(p => p.id === selectedPresetId)?.name || 'Custom',
             type: oscillatorType,
             frequency: frequency,
             amplitude: amplitude,
-            color: 'cyan',
+            color: 'yellow',
             partials: partials
-        },
-        {
-            id: 'play-harmonics',
-            label: 'Armoniche',
-            type: 'custom',
-            frequency: frequency,
-            amplitude: amplitude,
-            color: 'orange',
-            partials: [1.0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }
-    ];
+    ]
 
     return (
         <div className={styles.container}>
@@ -125,29 +123,22 @@ const PlaygroundPage = () => {
 
             <div className={styles.layout}>
                 <div className={styles.visualizerCol}>
-                    <WaveformVisualizer
-                        waves={currentWaves}
-                        showToggles={true}
-                        showSumWave={true}
-                    />
+                    <WaveformVisualizer waves={currentWaves}/>
                 </div>
 
                 <div className={styles.controlsCol}>
-                    <Card elevation={4} style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                    <Card elevation={4} className={styles.controlsCard}>
                         <Card.Header>
-                            <h3 className={`${styles.cardHeader} ${styles.controlsHeader}`}>
-                                <MdTune/> Controlli
-                            </h3>
+                            <h3 className={clsx(styles.cardHeader, styles.controlsHeader)}><MdTune/> Controlli</h3>
                         </Card.Header>
-                        <Card.Body style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+
+                        <Card.Body className={styles.controlsBody}>
                             <div className={styles.controlGroup}>
-                                <label className={styles.controlLabel}>
-                                    <MdWaves className={styles.controlIcon}/> Tipo Onda:
-                                </label>
+                                <label className={styles.controlLabel}><MdWaves className={styles.controlIcon}/> Tipo Onda:</label>
                                 <Select
-                                    options={waveformOptions}
-                                    value={oscillatorType}
-                                    onChange={handleWaveformChange}
+                                    options={presetOptions}
+                                    value={selectedPresetId}
+                                    onChange={handlePresetChange}
                                     color="cyan"
                                     icon={<MdWaves/>}
                                 />
@@ -158,20 +149,19 @@ const PlaygroundPage = () => {
                                     <MdMusicNote className={styles.controlIcon}/> Frequenza:
                                     <span className={styles.valBadge}>{frequency} Hz</span>
                                 </label>
-                                <div className={styles.sliderWrapper}>
-                                    <input
-                                        type="range" min={100} max={1000} value={frequency}
-                                        onChange={(e) => handleFrequencyChange(Number(e.target.value))}
-                                        className={styles.slider}
-                                    />
-                                    <div className={styles.sliderLabels}><span>Grave</span><span>Acuto</span></div>
-                                </div>
+                                <Slider
+                                    min={100}
+                                    max={1000}
+                                    value={frequency}
+                                    onChange={handleFrequencyChange}
+                                    leftLabel="Grave"
+                                    rightLabel="Acuto"
+                                    color="cyan"
+                                />
                             </div>
 
                             <div className={styles.controlGroup}>
-                                <label className={styles.controlLabel} style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>
-                                    Note Comuni:
-                                </label>
+                                <label className={clsx(styles.controlLabel, styles.mutedLabel)}>Note Comuni:</label>
                                 <div className={styles.buttonGrid}>
                                     {commonNotes.map((n, idx) =>
                                         <Button
@@ -190,14 +180,16 @@ const PlaygroundPage = () => {
                                     <MdVolumeUp className={styles.controlIcon}/> Volume:
                                     <span className={styles.valBadge}>{Math.round(amplitude * 100)}%</span>
                                 </label>
-                                <div className={styles.sliderWrapper}>
-                                    <input
-                                        type="range" min={0} max={1} step={0.01} value={amplitude}
-                                        onChange={(e) => handleAmplitudeChange(Number(e.target.value))}
-                                        className={styles.slider}
-                                    />
-                                    <div className={styles.sliderLabels}><span>Piano</span><span>Forte</span></div>
-                                </div>
+                                <Slider
+                                    min={0}
+                                    max={1}
+                                    step={0.01}
+                                    value={amplitude}
+                                    onChange={handleAmplitudeChange}
+                                    leftLabel="Piano"
+                                    rightLabel="Forte"
+                                    color="cyan"
+                                />
                             </div>
 
                             <div className={styles.actionButtons}>
@@ -205,12 +197,16 @@ const PlaygroundPage = () => {
                                     color="green" variant={isPlaying ? 'active' : 'default'}
                                     onClick={handlePlay} disabled={isPlaying}
                                     icon={<MdPlayArrow/>} className={styles.actionBtn}
-                                > Play </Button>
+                                >
+                                    Play
+                                </Button>
                                 <Button
                                     color="red" variant={!isPlaying ? 'active' : 'default'}
                                     onClick={handleStop} disabled={!isPlaying}
                                     icon={<MdStop/>} className={styles.actionBtn}
-                                > Release </Button>
+                                >
+                                    Stop
+                                </Button>
                             </div>
                         </Card.Body>
                     </Card>
