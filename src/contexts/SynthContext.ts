@@ -7,7 +7,7 @@ export type SynthContextType = {
     unregisterChannel: (id: string) => void;
     updateChannelConfig: (id: string, configUpdates: Partial<InstrumentConfig>) => void;
 
-    playNote: (channelId: string, note: string | number, velocity?: number) => void;
+    playNote: (channelId: string, note: string | number, velocity?: number, time?: number) => void;
     releaseNote: (channelId: string, note: string | number) => void;
     updateNoteFrequency: (channelId: string, oldNote: string | number, newNote: string | number) => void;
 }

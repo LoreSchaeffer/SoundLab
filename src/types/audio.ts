@@ -17,4 +17,5 @@ export type InstrumentConfig = {
     oscillatorType: OscillatorType;
     partials: number[];
     envelope: Envelope;
+    phase?: number;
 };

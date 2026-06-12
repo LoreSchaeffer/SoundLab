@@ -20,10 +20,11 @@ const PlaygroundPage = () => {
 
     const [frequency, setFrequency] = useState(440);
     const [amplitude, setAmplitude] = useState(0.5);
+    const [phase, setPhase] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
-    const [selectedPresetId, setSelectedPresetId] = useState<string>(presets[0]?.id || '');
-    const [oscillatorType, setOscillatorType] = useState<OscillatorType>(presets[0]?.oscillatorType || 'sine');
+    const [selectedPresetId, setSelectedPresetId] = useState<string>('sine');
+    const [oscillatorType, setOscillatorType] = useState<OscillatorType>('sine');
     const [partials, setPartials] = useState<number[]>(presets[0]?.partials || [1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
     useEffect(() => {
@@ -66,6 +67,11 @@ const PlaygroundPage = () => {
         updateChannelConfig(PLAYGROUND_CHANNEL_ID, {volume: newAmp});
     };
 
+    const handlePhaseChange = (newPhase: number) => {
+        setPhase(newPhase);
+        updateChannelConfig(PLAYGROUND_CHANNEL_ID, {phase: newPhase});
+    }
+
     const handlePlay = async () => {
         playNote(PLAYGROUND_CHANNEL_ID, frequency, 1.0);
         setIsPlaying(true);
@@ -83,6 +89,7 @@ const PlaygroundPage = () => {
             type: oscillatorType,
             frequency: frequency,
             amplitude: amplitude,
+            phase: phase,
             color: 'yellow',
             partials: partials
         }
@@ -100,7 +107,7 @@ const PlaygroundPage = () => {
 
             <div className={styles.layout}>
                 <div className={styles.visualizerCol}>
-                    <WaveformVisualizer waves={currentWaves}/>
+                    <WaveformVisualizer title={t('components.waveform_viewer.title')} waves={currentWaves}/>
                 </div>
 
                 <div className={styles.controlsCol}>
@@ -111,13 +118,15 @@ const PlaygroundPage = () => {
 
                         <Card.Body className={styles.controlsBody}>
                             <WaveformConfiguration
+                                color="cyan"
                                 presetId={selectedPresetId}
                                 onPresetChange={handlePresetChange}
                                 frequency={frequency}
                                 onFrequencyChange={handleFrequencyChange}
                                 amplitude={amplitude}
                                 onAmplitudeChange={handleAmplitudeChange}
-                                color="cyan"
+                                phase={phase}
+                                onPhaseChange={handlePhaseChange}
                             />
 
                             <div className={styles.actionButtons}>

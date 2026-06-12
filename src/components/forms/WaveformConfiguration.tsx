@@ -1,5 +1,5 @@
 import styles from "./WaveformConfiguration.module.css";
-import {MdMusicNote, MdVolumeUp, MdWaves} from "react-icons/md";
+import {MdCompareArrows, MdMusicNote, MdVolumeUp, MdWaves} from "react-icons/md";
 import Select from "../forms/Select.tsx";
 import Slider from "../forms/Slider.tsx";
 import clsx from "clsx";
@@ -21,6 +21,9 @@ type WaveformConfigurationProps = {
 
     amplitude: number;
     onAmplitudeChange: (amp: number) => void;
+
+    phase?: number;
+    onPhaseChange?: (phase: number) => void;
 }
 
 const WaveformConfiguration = ({
@@ -30,7 +33,9 @@ const WaveformConfiguration = ({
                                    frequency,
                                    onFrequencyChange,
                                    amplitude,
-                                   onAmplitudeChange
+                                   onAmplitudeChange,
+                                   phase,
+                                   onPhaseChange,
                                }: WaveformConfigurationProps) => {
     const {t} = useTranslation();
     const {presets} = usePreset();
@@ -94,6 +99,35 @@ const WaveformConfiguration = ({
                     )}
                 </div>
             </div>
+
+            {phase !== undefined && onPhaseChange && (
+                <div className={styles.controlGroup}>
+                    <label className={styles.controlLabel}>
+                        <MdCompareArrows className={styles.controlIcon}/>{t('components.waveform_controls.phase')}
+                        <DraggableBadge
+                            className={styles.valBadge}
+                            value={Math.round(phase)}
+                            onChange={(v) => onPhaseChange(v)}
+                            min={-180}
+                            max={180}
+                            step={1}
+                            dragMultiplier={1}
+                            unit="°"
+                            color={color}
+                        />
+                    </label>
+                    <Slider
+                        min={-180}
+                        max={180}
+                        step={1}
+                        value={phase}
+                        onChange={onPhaseChange}
+                        leftLabel="-180°"
+                        rightLabel="180°"
+                        color={color}
+                    />
+                </div>
+            )}
 
             <div className={styles.controlGroup}>
                 <label className={styles.controlLabel}>

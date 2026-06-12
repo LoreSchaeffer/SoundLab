@@ -13,18 +13,27 @@ export class Voice {
         this.velocityGain = new Gain(0).connect(targetNode);
         this.envelopeGain = new Gain(0).connect(this.velocityGain);
         this.oscillator = new Oscillator({volume: -12}).connect(this.envelopeGain);
-
-        this.oscillator.start();
     }
 
-    public play(noteToPlay: string | number, velocity: number, type: OscillatorType, partials: number[], env: Envelope) {
+    public play(noteToPlay: string | number, velocity: number, type: OscillatorType, partials: number[], env: Envelope, phase: number = 0, syncTime?: number) {
         this.active = true;
         this.note = noteToPlay;
-        const time = now() + 0.02;
 
-        this.oscillator.type = type;
-        if (type === 'custom') this.oscillator.partials = [...partials];
+        const time = syncTime !== undefined ? syncTime : now() + 0.02;
+
+        if (type === 'sine') {
+            this.oscillator.type = 'custom';
+            this.oscillator.partials = [1];
+        } else {
+            this.oscillator.type = type;
+            if (type === 'custom') this.oscillator.partials = [...partials];
+        }
+
+        this.oscillator.phase = ((phase % 360) + 360) % 360;
         this.oscillator.frequency.setValueAtTime(noteToPlay, time);
+
+        if (this.oscillator.state === 'started') this.oscillator.stop(time);
+        this.oscillator.start(time);
 
         this.velocityGain.gain.setValueAtTime(velocity, time);
 
@@ -65,7 +74,11 @@ export class Voice {
             envGain.exponentialRampToValueAtTime(0.0001, time + env.release);
         }
 
-        envGain.setValueAtTime(0, time + env.release + 0.01);
+        const stopTime = time + env.release + 0.01;
+        envGain.setValueAtTime(0, stopTime);
+
+        this.oscillator.stop(stopTime);
+
         this.active = false;
         this.note = null;
     }
@@ -77,6 +90,8 @@ export class Voice {
         envGain.cancelScheduledValues(time);
         envGain.setValueAtTime(envGain.value, time);
         envGain.linearRampToValueAtTime(0, time + 0.005);
+
+        this.oscillator.stop(time + 0.01);
 
         this.active = false;
         this.note = null;

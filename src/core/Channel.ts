@@ -36,10 +36,14 @@ export class Channel {
             } else if (newConfig.partials !== undefined && this.config.oscillatorType === 'custom') {
                 v.oscillator.partials = [...newConfig.partials];
             }
+
+            if (newConfig.phase !== undefined) {
+                v.oscillator.phase = ((newConfig.phase % 360) + 360) % 360;
+            }
         });
     }
 
-    public playNote(note: string | number, velocity: number = 1) {
+    public playNote(note: string | number, velocity: number = 1, time?: number) {
         if (this.voices.some(v => v.note === note && v.active)) return;
 
         // Round-Robin Voice Stealing
@@ -53,7 +57,7 @@ export class Channel {
             this.voices.push(freeVoice);
         }
 
-        freeVoice.play(note, velocity, this.config.oscillatorType, this.config.partials, this.config.envelope);
+        freeVoice.play(note, velocity, this.config.oscillatorType, this.config.partials, this.config.envelope, this.config.phase || 0, time);
     }
 
     public releaseNote(note: string | number) {

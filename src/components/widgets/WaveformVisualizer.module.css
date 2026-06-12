@@ -27,6 +27,10 @@
     font-size: 1.5rem;
 }
 
+.headerData {
+    margin-left: auto;
+}
+
 .body {
     flex: 1;
     display: flex;

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {type ReactElement, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import styles from "./WaveformVisualizer.module.css";
 import Card from "../elements/Card.tsx";
 import {type Color, getComputedColor} from "../../types";
@@ -14,6 +14,7 @@ export type WaveDefinition = {
     amplitude: number;
     color: Color;
     partials?: number[];
+    phase?: number;
 };
 
 export type WaveformVisualizerProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -23,6 +24,7 @@ export type WaveformVisualizerProps = React.HTMLAttributes<HTMLDivElement> & {
     showToggles?: boolean;
     showSumWave?: boolean;
     sumWaveColor?: Color;
+    header?: ReactElement;
 };
 
 const WaveformVisualizer = ({
@@ -34,6 +36,7 @@ const WaveformVisualizer = ({
                                 sumWaveColor = "white",
                                 className,
                                 style,
+                                header,
                                 ...props
                             }: WaveformVisualizerProps) => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -57,19 +60,22 @@ const WaveformVisualizer = ({
     };
 
     const getWaveY = useCallback((wave: WaveDefinition, tParam: number) => {
+        const phaseRad = ((wave.phase || 0) * Math.PI) / 180;
+        const shiftedT = tParam + phaseRad;
+
         let y = 0;
         switch (wave.type) {
             case 'sine':
-                y = Math.sin(tParam);
+                y = Math.sin(shiftedT);
                 break;
             case 'square':
-                y = Math.sign(Math.sin(tParam));
+                y = Math.sign(Math.sin(shiftedT));
                 break;
             case 'triangle':
-                y = (2 / Math.PI) * Math.asin(Math.sin(tParam));
+                y = (2 / Math.PI) * Math.asin(Math.sin(shiftedT));
                 break;
             case 'sawtooth':
-                y = ((tParam / (2 * Math.PI)) % 1) * 2 - 1;
+                y = ((shiftedT / (2 * Math.PI)) % 1) * 2 - 1;
                 break;
             case 'custom': {
                 const partials = wave.partials || [];
@@ -77,13 +83,14 @@ const WaveformVisualizer = ({
                 const scale = sum > 0 ? 1 / Math.max(1, sum * 0.6) : 1;
 
                 for (let i = 0; i < partials.length; i++) {
-                    if (partials[i] > 0) y += partials[i] * Math.sin(tParam * (i + 1));
+                    if (partials[i] > 0) y += partials[i] * Math.sin(shiftedT * (i + 1));
                 }
 
                 y *= scale;
                 break;
             }
         }
+
         return y * wave.amplitude;
     }, []);
 
@@ -215,6 +222,7 @@ const WaveformVisualizer = ({
             <Card.Header className={styles.header}>
                 <MdGraphicEq className={styles.titleIcon} style={{color: computedTitleColor}}/>
                 <h3 className={styles.title} style={{color: computedTitleColor}}>{title}</h3>
+                <div className={styles.headerData}>{header}</div>
             </Card.Header>
 
             <Card.Body className={styles.body}>

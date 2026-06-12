@@ -32,8 +32,8 @@ export const SynthProvider = ({children}: PropsWithChildren) => {
         }
     }, []);
 
-    const playNote = useCallback((channelId: string, note: string | number, velocity: number = 1) => {
-        AudioEngine.getChannel(channelId)?.playNote(note, velocity);
+    const playNote = useCallback((channelId: string, note: string | number, velocity: number = 1, time?: number) => {
+        AudioEngine.getChannel(channelId)?.playNote(note, velocity, time);
     }, []);
 
     const releaseNote = useCallback((channelId: string, note: string | number) => {

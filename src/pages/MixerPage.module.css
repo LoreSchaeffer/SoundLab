@@ -1,0 +1,114 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    height: 100%;
+}
+
+.pageHeader {
+    margin-bottom: 8px;
+}
+
+.titleRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.titleIcon {
+    font-size: 2rem;
+    color: var(--orange-500);
+}
+
+.title {
+    font: var(--h2);
+    font-family: 'Chewy', sans-serif;
+    margin: 0;
+}
+
+.description {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin: 0;
+}
+
+.visualizerSection {
+    width: 100%;
+    height: 400px;
+    flex-shrink: 0;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 6px;
+}
+
+.wavesHeaderRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+}
+
+.wavesTitle {
+    font: var(--h3);
+    font-family: 'Chewy', sans-serif;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.wavesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    padding-bottom: 24px;
+}
+
+.waveCard {
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.2s ease;
+}
+
+.waveCardMuted {
+    opacity: 0.6;
+}
+
+.waveCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.waveTitleGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: var(--h4);
+    font-family: 'Chewy', sans-serif;
+    margin: 0;
+}
+
+.colorDot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.waveControls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+}
+
+.squareBtn {
+    padding: 6px;
+}

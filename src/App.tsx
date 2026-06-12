@@ -4,7 +4,7 @@ import Page from "./components/templates/Page.tsx";
 import HomePage from "./pages/HomePage.tsx";
 import PresetGeneratorPage from "./pages/PresetGeneratorPage.tsx";
 import PlaygroundPage from "./pages/PlaygroundPage.tsx";
-import WaveSumPage from "./pages/WaveSumPage.tsx";
+import MixerPage from "./pages/MixerPage.tsx";
 
 export type Provider = 'synth' | 'preset' | 'midi';
 
@@ -18,7 +18,7 @@ type AppRoute = {
 const locations: AppRoute[] = [
     {path: '/', element: <HomePage/>, providers: ['synth'], showNav: false},
     {path: '/playground', element: <PlaygroundPage/>, providers: ['synth', 'preset']},
-    {path: '/wavesum', element: <WaveSumPage/>, providers: ['synth', 'preset']},
+    {path: '/mixer', element: <MixerPage/>, providers: ['synth', 'preset']},
     {path: '/preset-generator', element: <PresetGeneratorPage/>, providers: ['synth', 'preset', 'midi']},
     {path: '*', element: <div>Page not found</div>},
 ];

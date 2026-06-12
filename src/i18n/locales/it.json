@@ -25,17 +25,22 @@
     "piano": "Piano",
     "forte": "Forte",
     "play": "Play",
-    "stop": "Stop"
+    "stop": "Stop",
+    "wave": "Onda"
   },
   "components": {
     "waveform_controls": {
       "waveform": "Tipo Onda:",
       "frequency": "Frequenza:",
       "common_notes": "Note Comuni:",
+      "phase": "Fase:",
       "volume": "Volume:"
     },
     "draggable_badge": {
       "title": "Trascina per cambiare, clicca per scrivere, usa rotellina per incrementi"
+    },
+    "waveform_viewer": {
+      "title": "Visualizzatore di Onde"
     }
   },
   "homepage": {
@@ -46,5 +51,11 @@
     "title": "Parcogiochi Onde",
     "description": "Esplora differenti onde sonore! Scegli un tipo di onda, aggiusta la frequenza e il volume, poi premi play per sentire il suono!",
     "controls": "Controlli"
+  },
+  "mixer": {
+    "title": "Mixer",
+    "description": "Aggiungi onde, modifica le frequenze e scopri come l'interferenza crea timbri complessi!",
+    "sources": "Sorgenti",
+    "add_wave": "Nuova Onda"
   }
 }
