@@ -1,0 +1,23 @@
+:root {
+    --anim-duration: 15s;
+    --trans-x: 10%;
+    --trans-y: 5%;
+    --scale: 1.15;
+}
+
+.glowSpot {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    pointer-events: none;
+    animation: moveGlow var(--anim-duration) infinite alternate ease-in-out;
+}
+
+@keyframes moveGlow {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    100% {
+        transform: translate(var(--trans-x), var(--trans-y)) scale(var(--scale));
+    }
+}

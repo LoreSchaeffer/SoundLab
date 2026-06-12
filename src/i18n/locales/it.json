@@ -1,0 +1,50 @@
+{
+  "sound_lab": "Sound Lab",
+  "notes": {
+    "C": "Do",
+    "D": "Re",
+    "E": "Mi",
+    "F": "Fa",
+    "G": "Sol",
+    "A": "La",
+    "B": "Si"
+  },
+  "waves": {
+    "sine": "Seno",
+    "square": "Quadra",
+    "triangle": "Triangolo",
+    "sawtooth": "Dente di sega"
+  },
+  "instruments": {
+    "piano": "Pianoforte"
+  },
+  "common": {
+    "custom_wave": "Personalizzata",
+    "low": "Grave",
+    "high": "Acuto",
+    "piano": "Piano",
+    "forte": "Forte",
+    "play": "Play",
+    "stop": "Stop"
+  },
+  "components": {
+    "waveform_controls": {
+      "waveform": "Tipo Onda:",
+      "frequency": "Frequenza:",
+      "common_notes": "Note Comuni:",
+      "volume": "Volume:"
+    },
+    "draggable_badge": {
+      "title": "Trascina per cambiare, clicca per scrivere, usa rotellina per incrementi"
+    }
+  },
+  "homepage": {
+    "subtitle": "Scopri come nascono i suoni, combina le onde sonore e divertiti con la musica!",
+    "play": "Inizia Ora!"
+  },
+  "playground": {
+    "title": "Parcogiochi Onde",
+    "description": "Esplora differenti onde sonore! Scegli un tipo di onda, aggiusta la frequenza e il volume, poi premi play per sentire il suono!",
+    "controls": "Controlli"
+  }
+}

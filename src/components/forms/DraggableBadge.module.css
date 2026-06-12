@@ -1,0 +1,65 @@
+.badge {
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: monospace;
+    background-color: var(--background-primary);
+    padding: 4px 4px;
+    border-radius: 6px;
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: border-color 200ms ease;
+}
+
+.badge:hover {
+    border-color: hsl(var(--neutral-50-hsl) / 0.25);
+}
+
+.contentWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.inputContainer,
+.textContainer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+}
+
+.value,
+.input {
+    width: 40px;
+    text-align: right;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.input {
+    background-color: transparent;
+    cursor: text;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    border: none;
+    -moz-appearance: textfield;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.unit {
+    font-family: inherit;
+    font-size: inherit;
+    display: inline-block;
+    min-width: 22px;
+    text-align: left;
+}

@@ -1,0 +1,40 @@
+.controlGroup {
+    margin-bottom: 24px;
+}
+
+.controlLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.controlLabel.mutedLabel {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.controlIcon {
+    color: var(--text-muted);
+    font-size: 1.2rem;
+}
+
+.valBadge {
+    margin-left: auto;
+}
+
+.buttonGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.buttonGrid > * {
+    flex: 1 1 calc(25% - 8px);
+    min-width: 50px;
+    font-size: 0.85rem;
+    padding: 8px;
+}

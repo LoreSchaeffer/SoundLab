@@ -40,7 +40,7 @@ const WaveformVisualizer = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const [hiddenWaves, setHiddenWaves] = useState<Set<string>>(new Set());
-    const [isSumVisible, setIsSumVisible] = useState<boolean>(waves.length > 1 && showSumWave);
+    const [isSumVisible, setIsSumVisible] = useState<boolean>(showSumWave);
 
     const computedTitleColor = useMemo(() => getComputedColor(titleColor), [titleColor]);
     const computedSumColor = useMemo(() => getComputedColor(sumWaveColor), [sumWaveColor]);
@@ -149,7 +149,7 @@ const WaveformVisualizer = ({
         });
 
         // Waves Sum
-        if (showSumWave && isSumVisible && activeWaves.length > 0) {
+        if (showSumWave && isSumVisible && activeWaves.length > 1) {
             ctx.strokeStyle = computedSumColor;
             ctx.lineWidth = 2.5;
 

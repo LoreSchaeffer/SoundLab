@@ -4,19 +4,7 @@ import type {InstrumentConfig} from "../types/audio.ts";
 import {AudioEngine} from "../core/AudioEngine.ts";
 
 export const SynthProvider = ({children}: PropsWithChildren) => {
-    const [isAudioReady, setIsAudioReady] = useState(false);
-    const [masterVolume, setMasterVolumeState] = useState(0.8);
     const [channels, setChannelsState] = useState<Record<string, InstrumentConfig>>({});
-
-    const initAudio = useCallback(async () => {
-        await AudioEngine.init();
-        setIsAudioReady(true);
-    }, []);
-
-    const setMasterVolume = useCallback((vol: number) => {
-        setMasterVolumeState(vol);
-        AudioEngine.setMasterVolume(vol);
-    }, []);
 
     const registerChannel = useCallback((config: InstrumentConfig) => {
         AudioEngine.createChannel(config);
@@ -59,10 +47,6 @@ export const SynthProvider = ({children}: PropsWithChildren) => {
 
     return (
         <SynthContext.Provider value={{
-            isAudioReady,
-            initAudio,
-            masterVolume,
-            setMasterVolume,
             channels,
             registerChannel,
             unregisterChannel,

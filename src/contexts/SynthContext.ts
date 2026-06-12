@@ -2,12 +2,6 @@ import {createContext, useContext} from 'react';
 import type {InstrumentConfig} from "../types/audio.ts";
 
 export type SynthContextType = {
-    isAudioReady: boolean;
-    initAudio: () => Promise<void>;
-
-    masterVolume: number;
-    setMasterVolume: (vol: number) => void;
-
     channels: Record<string, InstrumentConfig>;
     registerChannel: (config: InstrumentConfig) => void;
     unregisterChannel: (id: string) => void;
