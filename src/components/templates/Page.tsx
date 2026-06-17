@@ -1,25 +1,14 @@
 import {type PropsWithChildren, useEffect} from "react";
-import type {Provider} from "../../App.tsx";
 import Navbar from "./Navbar.tsx";
-import {SynthProvider} from "../../contexts/SynthProvider.tsx";
-import {PresetProvider} from "../../contexts/PresetProvider.tsx";
-import {MidiProvider} from "../../contexts/MidiProvider.tsx";
 import {useAudio} from "../../contexts/AudioContext.ts";
 import clsx from "clsx";
 
 type PageProps = PropsWithChildren & {
-    providers?: Provider[];
     showNav?: boolean;
 }
 
-const Page = ({providers = [], showNav = true, children}: PageProps) => {
+const Page = ({showNav = true, children}: PageProps) => {
     const {isAudioReady, initAudio} = useAudio();
-
-    let content = <>{children}</>;
-
-    if (providers.includes('midi')) content = <MidiProvider>{content}</MidiProvider>;
-    if (providers.includes('preset')) content = <PresetProvider>{content}</PresetProvider>;
-    if (providers.includes('synth')) content = <SynthProvider>{content}</SynthProvider>;
 
     useEffect(() => {
         if (isAudioReady) return;
@@ -70,7 +59,7 @@ const Page = ({providers = [], showNav = true, children}: PageProps) => {
         <>
             {showNav && <Navbar/>}
             <div className={clsx('page', showNav && 'padding')}>
-                {content}
+                {children}
             </div>
         </>
     );

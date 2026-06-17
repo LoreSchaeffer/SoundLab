@@ -1,5 +1,5 @@
 import styles from "./CurveEditor.module.css";
-import type {Color, Coord} from "../../types";
+import {type Color, type Coord, getComputedColor} from "../../types";
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Card from "../elements/Card.tsx";
 import clsx from "clsx";
@@ -10,7 +10,7 @@ export type CurveEditorProps = {
     title: string;
     color: Color;
     coloredBackground?: boolean;
-    allowAdvanced?: boolean
+    allowAdvanced?: boolean;
 
     time: number;
     onTimeChange?: (time: number) => void;
@@ -30,7 +30,7 @@ export type CurveEditorProps = {
 }
 
 const CurveEditor = ({
-                         width = 200,
+                         width,
                          height = 200,
                          title,
                          color,
@@ -53,6 +53,7 @@ const CurveEditor = ({
                          points,
                          onPointsChange
                      }: CurveEditorProps) => {
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -71,20 +72,10 @@ const CurveEditor = ({
     const [tempTime, setTempTime] = useState<string>("");
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const getComputedColor = useCallback((colorName: Color) => {
-        if (typeof window === 'undefined') return '#ffffff';
-        return getComputedStyle(document.documentElement).getPropertyValue(`--${colorName}-500`).trim();
-    }, []);
-
     const computedBackgroundColor = useMemo(() => {
         const mainColor = getComputedColor(color);
         return `color-mix(in srgb, ${mainColor} 8%, #000000)`;
     }, [color, getComputedColor]);
-
-    const toCanvas = useCallback((p: Coord) => ({
-        x: p.x * width,
-        y: height - (p.y * height)
-    }), [width, height]);
 
     const getMathPos = useCallback((e: React.MouseEvent | MouseEvent | React.TouchEvent | TouchEvent): Coord => {
         const canvas = canvasRef.current;
@@ -94,40 +85,56 @@ const CurveEditor = ({
         const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
 
-        const x = Math.max(0, Math.min(1, (clientX - rect.left) / width));
-        const y = Math.max(0, Math.min(1, 1 - ((clientY - rect.top) / height)));
+        const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, 1 - ((clientY - rect.top) / rect.height)));
 
         return {x, y};
-    }, [width, height]);
+    }, []);
 
-    const draw = useCallback(() => {
+    const draw = useCallback((w: number, h: number) => {
+        const canvas = canvasRef.current;
         const ctx = ctxRef.current;
-        if (!ctx) return;
+        if (!canvas || !ctx || w === 0 || h === 0) return;
+
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+
+        ctx.scale(dpr, dpr);
+
+        const toCanvas = (p: Coord) => ({
+            x: p.x * w,
+            y: h - (p.y * h)
+        });
 
         const mainColor = getComputedColor(color);
-        ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, w, h);
 
-        // Grid
+        // Draw Grid
         ctx.strokeStyle = coloredBackground ? `color-mix(in srgb, ${mainColor} 20%, transparent)` : 'rgba(255, 255, 255, 0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         if (advancedMode) {
             for (let i = 1; i < 4; i++) {
-                ctx.moveTo((width / 4) * i, 0);
-                ctx.lineTo((width / 4) * i, height);
-                ctx.moveTo(0, (height / 4) * i);
-                ctx.lineTo(width, (height / 4) * i);
+                ctx.moveTo((w / 4) * i, 0);
+                ctx.lineTo((w / 4) * i, h);
+                ctx.moveTo(0, (h / 4) * i);
+                ctx.lineTo(w, (h / 4) * i);
             }
         } else {
-            ctx.moveTo(width / 2, 0);
-            ctx.lineTo(width / 2, height);
-            ctx.moveTo(0, height / 2);
-            ctx.lineTo(width, height / 2);
+            ctx.moveTo(w / 2, 0);
+            ctx.lineTo(w / 2, h);
+            ctx.moveTo(0, h / 2);
+            ctx.lineTo(w, h / 2);
         }
         ctx.stroke();
 
         if (advancedMode && points) {
-            // Draw MSEG
+            // Draw MSEG Curves
             ctx.strokeStyle = mainColor;
             ctx.lineWidth = 2.5;
             ctx.lineJoin = 'round';
@@ -139,11 +146,12 @@ const CurveEditor = ({
             });
             ctx.stroke();
 
+            // Draw MSEG Points
             points.forEach((p) => {
                 const canvasP = toCanvas(p);
                 ctx.fillStyle = computedBackgroundColor;
                 ctx.strokeStyle = mainColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 2.5;
                 ctx.beginPath();
                 ctx.arc(canvasP.x, canvasP.y, 4, 0, Math.PI * 2);
                 ctx.fill();
@@ -151,12 +159,13 @@ const CurveEditor = ({
             });
 
         } else {
-            // Draw BEZIER
+            // Draw Bezier Curve
             const p0 = toCanvas({x: 0, y: startY});
             const p3 = toCanvas({x: 1, y: endY});
             const c1 = toCanvas(handle1);
             const c2 = toCanvas(handle2);
 
+            // Handle connection lines
             ctx.strokeStyle = mainColor;
             ctx.globalAlpha = 0.3;
             ctx.lineWidth = 1.5;
@@ -168,6 +177,7 @@ const CurveEditor = ({
             ctx.stroke();
             ctx.globalAlpha = 1.0;
 
+            // Main curve
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.beginPath();
@@ -175,16 +185,18 @@ const CurveEditor = ({
             ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p3.x, p3.y);
             ctx.stroke();
 
+            // Endpoints
             ctx.fillStyle = mainColor;
             ctx.beginPath();
-            ctx.arc(p0.x, p0.y, 3, 0, Math.PI * 2);
+            ctx.arc(p0.x, p0.y, 3.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(p3.x, p3.y, 3, 0, Math.PI * 2);
+            ctx.arc(p3.x, p3.y, 3.5, 0, Math.PI * 2);
             ctx.fill();
 
+            // Handles
             ctx.fillStyle = computedBackgroundColor;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.arc(c1.x, c1.y, 5, 0, Math.PI * 2);
             ctx.fill();
@@ -194,13 +206,28 @@ const CurveEditor = ({
             ctx.fill();
             ctx.stroke();
         }
-    }, [advancedMode, points, color, width, height, coloredBackground, toCanvas, startY, endY, handle1, handle2, computedBackgroundColor, getComputedColor]);
+    }, [advancedMode, points, color, coloredBackground, startY, endY, handle1, handle2, computedBackgroundColor, getComputedColor]);
 
     useEffect(() => {
         if (canvasRef.current) {
             ctxRef.current = canvasRef.current.getContext('2d');
-            draw();
         }
+    }, []);
+
+    // Observer attached to the wrapper, NOT the canvas
+    useEffect(() => {
+        const wrapper = wrapperRef.current;
+        if (!wrapper) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            const {width, height} = entry.contentRect;
+            // Draw is triggered exclusively by layout changes or dependency updates
+            draw(width, height);
+        });
+
+        resizeObserver.observe(wrapper);
+        return () => resizeObserver.disconnect();
     }, [draw]);
 
     const handleCanvasMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
@@ -240,7 +267,7 @@ const CurveEditor = ({
     };
 
     const handleGlobalMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
-        // Drag MSEG
+        // Drag MSEG points
         if (advancedMode && dragTargetMSEG.current !== -1 && points) {
             if ('touches' in e && e.cancelable) e.preventDefault();
             const pos = getMathPos(e);
@@ -258,7 +285,7 @@ const CurveEditor = ({
             return;
         }
 
-        // Drag Bezier
+        // Drag Bezier handles
         if (!advancedMode && dragTargetBezier.current !== 'none') {
             if ('touches' in e && e.cancelable) e.preventDefault();
             const pos = getMathPos(e);
@@ -267,7 +294,7 @@ const CurveEditor = ({
             return;
         }
 
-        // Drag Tempo
+        // Drag Time value
         if (isDraggingTime.current) {
             if ('touches' in e && e.cancelable) e.preventDefault();
             const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
@@ -365,7 +392,10 @@ const CurveEditor = ({
     };
 
     return (
-        <Card elevation={4} className={styles.container} style={{width: width + 26}}>
+        <Card
+            elevation={4}
+            style={{flex: 1, minWidth: '150px', flexBasis: width ? `${width}px` : 'auto'}}
+        >
             <Card.Header className={styles.header}>
                 <span className={styles.title} style={{color: `var(--${color}-500)`}}>
                     {title}
@@ -381,7 +411,7 @@ const CurveEditor = ({
                                 color: `var(--${color}-500)`,
                                 backgroundColor: `color-mix(in srgb, var(--${color}-500) 10%, transparent)`
                             } : {}}
-                            title={advancedMode ? "Torna alla Modalità Base" : "Attiva la Modalità Avanzata"}
+                            title={advancedMode ? "Return to Basic Mode" : "Enable Advanced Mode"}
                         >
                             {advancedMode ? 'ADV' : 'BAS'}
                         </button>
@@ -415,7 +445,8 @@ const CurveEditor = ({
                                 onTouchStart={handleTimeMouseDown}
                                 onTouchEnd={handleTimeMouseUp}
                                 onWheel={handleTimeWheel}
-                                title="Drag to change, click to type"
+                                title="Drag to change, click to edit"
+                                style={{cursor: 'ew-resize'}}
                             >
                                 {time > 9999 ? '∞ ms' : `${Math.round(time)} ms`}
                             </span>
@@ -425,17 +456,16 @@ const CurveEditor = ({
             </Card.Header>
             <Card.Body>
                 <div
+                    ref={wrapperRef}
                     className={styles.canvasWrapper}
                     style={{
-                        width: width,
+                        width: '100%',
                         height: height,
                         backgroundColor: coloredBackground ? computedBackgroundColor : '#000000'
                     }}
                 >
                     <canvas
                         ref={canvasRef}
-                        width={width}
-                        height={height}
                         className={styles.canvas}
                         onMouseDown={handleCanvasMouseDown}
                         onTouchStart={handleCanvasMouseDown}

@@ -1,4 +1,5 @@
 {
+  "lang": "Italiano",
   "sound_lab": "Sound Lab",
   "notes": {
     "C": "Do",
@@ -26,21 +27,63 @@
     "forte": "Forte",
     "play": "Play",
     "stop": "Stop",
-    "wave": "Onda"
+    "wave": "Onda",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "close": "Chiudi",
+    "oscillator": "Oscillatore",
+    "envelope": "Inviluppo"
+  },
+  "nav": {
+    "playground": "Parcogiochi Onde",
+    "mixer": "Mixer",
+    "sequencer": "Sequenziatore",
+    "info": "Info"
   },
   "components": {
+    "waveform_visualizer": {
+      "title": "Visualizzatore di Onde"
+    },
+    "harmonics_editor": {
+      "title": "Editor di Armoniche"
+    },
     "waveform_controls": {
       "waveform": "Tipo Onda:",
       "frequency": "Frequenza:",
       "common_notes": "Note Comuni:",
       "phase": "Fase:",
-      "volume": "Volume:"
+      "volume": "Volume:",
+      "edit_inst_preset": "Modifica Preset",
+      "delete_inst_preset": "Elimina Preset",
+      "create_inst_preset": "Crea Nuovo Preset"
     },
     "draggable_badge": {
       "title": "Trascina per cambiare, clicca per scrivere, usa rotellina per incrementi"
     },
-    "waveform_viewer": {
-      "title": "Visualizzatore di Onde"
+    "misc": {
+      "select_placeholder": "Seleziona..."
+    }
+  },
+  "modals": {
+    "delete_inst_preset": {
+      "title": "Elimina Preset",
+      "description": "Sei sicuro di voler eliminare questo preset? Questa azione non può essere annullata."
+    },
+    "edit_inst_preset": {
+      "title": "Nome Preset...",
+      "save_copy_title": "Salva come copia",
+      "save_title": "Salva Preset",
+      "save_json_title": "Salva Preset come JSON",
+      "delete_title": "Elimina Preset"
+    }
+  },
+  "notifications": {
+    "inst_preset_deleted": {
+      "message": "Preset eliminato con successo."
+    },
+    "inst_preset_saved": {
+      "saved": "Preset salvato con successo.",
+      "saved_copy": "Preset salvato come copia."
     }
   },
   "homepage": {

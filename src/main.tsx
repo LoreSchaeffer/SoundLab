@@ -4,11 +4,26 @@ import {createRoot} from 'react-dom/client'
 import App from './App.tsx'
 import './i18n/config.ts';
 import {AudioProvider} from "./contexts/AudioProvider.tsx";
+import {ModalProvider} from "./pages/ModalProvider.tsx";
+import {NotificationProvider} from "./pages/NotificationProvider.tsx";
+import {PresetProvider} from "./contexts/PresetProvider.tsx";
+import {SynthProvider} from "./contexts/SynthProvider.tsx";
+import {MidiProvider} from "./contexts/MidiProvider.tsx";
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <AudioProvider>
-            <App/>
+            <PresetProvider>
+                <SynthProvider>
+                    <MidiProvider>
+                        <NotificationProvider>
+                            <ModalProvider>
+                                <App/>
+                            </ModalProvider>
+                        </NotificationProvider>
+                    </MidiProvider>
+                </SynthProvider>
+            </PresetProvider>
         </AudioProvider>
     </StrictMode>,
 )

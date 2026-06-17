@@ -1,0 +1,110 @@
+.backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(0px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 200ms ease-out, backdrop-filter 200ms ease-out;
+    pointer-events: none;
+}
+
+.backdropOpen {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+    pointer-events: auto;
+}
+
+.modal {
+    background-color: var(--background-secondary);
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+    width: 100%;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modalOpen {
+    transform: scale(1) translateY(0);
+}
+
+.sm {
+    max-width: 400px;
+}
+
+.md {
+    max-width: 560px;
+}
+
+.lg {
+    max-width: 800px;
+}
+
+.xl {
+    max-width: 1280px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.06);
+}
+
+.title {
+    font-family: 'Chewy', sans-serif;
+    font-size: 1.4rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.closeBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    color: var(--text-primary);
+    background-color: hsl(var(--neutral-50-hsl) / 0.05);
+}
+
+.body {
+    padding: 20px;
+    overflow-y: auto;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid hsl(var(--neutral-50-hsl) / 0.06);
+    background-color: hsl(var(--neutral-900-hsl) / 0.2);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}

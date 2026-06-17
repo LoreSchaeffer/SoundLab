@@ -1,12 +1,14 @@
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 import styles from './HarmonicsEditor.module.css';
-import type {Color} from "../../types";
+import {type Color, getComputedColor} from "../../types";
 import Card from "../elements/Card.tsx";
+import {useTranslation} from "react-i18next";
 
 export type HarmonicsEditorProps = {
     partials: number[];
     width?: number;
-    height?: number;
+    height?: number; // Ora rappresenta l'altezza TOTALE (canvas + slider)
+    graphHeightRatio?: number; // Percentuale di altezza del canvas rispetto al totale (0.0 a 1.0)
     title?: string;
     color: Color;
     colored?: boolean;
@@ -16,65 +18,81 @@ export type HarmonicsEditorProps = {
 const HarmonicsEditor = ({
                              partials,
                              onPartialsChange,
-                             title = 'Harmonics',
+                             title,
                              color,
                              colored = true,
-                             width = 600,
-                             height = 120
+                             width,
+                             height = 260,
+                             graphHeightRatio = 0.5
                          }: HarmonicsEditorProps) => {
+    const {t} = useTranslation();
+    const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const trackRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const isDragging = useRef(false);
+    const isDragging = useRef<boolean>(false);
 
-    const getComputedColor = useCallback((colorName: Color) => {
-        if (typeof window === 'undefined') return '#ffffff';
-        return getComputedStyle(document.documentElement).getPropertyValue(`--${colorName}-500`).trim();
-    }, []);
+    const canvasDimensions = useRef({w: 0, h: 0});
+    const canvasHeight = Math.floor(height * graphHeightRatio);
+    const controlsHeight = height - canvasHeight;
 
     const computedBackgroundColor = useMemo(() => {
         const mainColor = getComputedColor(color);
         return `color-mix(in srgb, ${mainColor} 8%, #000000)`;
-    }, [color, getComputedColor]);
+    }, [color]);
 
-    const drawWaveform = useCallback(() => {
+    const finalTitle = title || t('components.harmonics_editor.title');
+
+    const drawWaveform = useCallback((w: number, h: number) => {
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!ctx || !canvas) return;
+        if (!canvas || w === 0 || h === 0) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+
+        ctx.scale(dpr, dpr);
 
         const mainColor = getComputedColor(color);
-        ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, w, h);
 
         ctx.strokeStyle = colored ? `color-mix(in srgb, ${mainColor} 20%, transparent)` : 'rgba(255, 255, 255, 0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        ctx.lineTo(width, height / 2);
+        ctx.moveTo(0, h / 2);
+        ctx.lineTo(w, h / 2);
         ctx.stroke();
 
         let maxPeak = 0;
-        const waveData = new Float32Array(width);
+        const waveData = new Float32Array(w);
 
-        for (let x = 0; x < width; x++) {
-            const t = x / width;
+        for (let x = 0; x < w; x++) {
+            const tParam = x / w;
             let y = 0;
 
             for (let i = 0; i < partials.length; i++) {
-                y += partials[i] * Math.sin((i + 1) * Math.PI * 2 * t);
+                y += partials[i] * Math.sin((i + 1) * Math.PI * 2 * tParam);
             }
 
             waveData[x] = y;
             if (Math.abs(y) > maxPeak) maxPeak = Math.abs(y);
         }
 
-        const scale = maxPeak > 0 ? (height / 2) / (maxPeak * 1.1) : 0;
-        const centerY = height / 2;
+        const scale = maxPeak > 0 ? (h / 2) / (maxPeak * 1.1) : 0;
+        const centerY = h / 2;
 
         ctx.strokeStyle = mainColor;
         ctx.lineWidth = 2.5;
         ctx.lineJoin = 'round';
         ctx.beginPath();
 
-        for (let x = 0; x < width; x++) {
+        for (let x = 0; x < w; x++) {
             const canvasY = centerY - (waveData[x] * scale);
             if (x === 0) ctx.moveTo(x, canvasY);
             else ctx.lineTo(x, canvasY);
@@ -83,17 +101,35 @@ const HarmonicsEditor = ({
 
         ctx.fillStyle = mainColor;
         ctx.beginPath();
-        ctx.arc(0, centerY - (waveData[0] * scale), 3, 0, Math.PI * 2);
+        ctx.arc(0, centerY - (waveData[0] * scale), 3.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(width, centerY - (waveData[width - 1] * scale), 3, 0, Math.PI * 2);
+        ctx.arc(w, centerY - (waveData[w - 1] * scale), 3.5, 0, Math.PI * 2);
         ctx.fill();
 
-    }, [partials, width, height, color, colored, getComputedColor]);
+    }, [partials, color, colored]);
 
     useEffect(() => {
-        drawWaveform();
+        const container = canvasContainerRef.current;
+        if (!container) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            const {width, height} = entry.contentRect;
+            canvasDimensions.current = {w: width, h: height};
+            drawWaveform(width, height);
+        });
+
+        resizeObserver.observe(container);
+        return () => resizeObserver.disconnect();
     }, [drawWaveform]);
+
+    useEffect(() => {
+        const {w, h} = canvasDimensions.current;
+        if (w > 0 && h > 0) {
+            drawWaveform(w, h);
+        }
+    }, [partials, drawWaveform]);
 
     const updatePartial = useCallback((e: React.PointerEvent | PointerEvent, index: number) => {
         const track = trackRefs.current[index];
@@ -101,7 +137,7 @@ const HarmonicsEditor = ({
 
         const rect = track.getBoundingClientRect();
         let value = 1 - ((e.clientY - rect.top) / rect.height);
-        value = Math.max(0, Math.min(1, value)); // Clamp tra 0 e 1
+        value = Math.max(0, Math.min(1, value));
 
         const newPartials = [...partials];
         newPartials[index] = value;
@@ -147,24 +183,36 @@ const HarmonicsEditor = ({
     };
 
     return (
-        <Card elevation={4} className={styles.container} style={{width: width + 26}}>
+        <Card
+            elevation={4}
+            className={styles.container}
+            style={{flex: '0 0 auto', minWidth: '300px', width: width ? `${width}px` : '100%'}}
+        >
             <Card.Header className={styles.header}>
                 <span className={styles.title} style={{color: `var(--${color}-500)`}}>
-                    {title}
+                    {finalTitle}
                 </span>
             </Card.Header>
             <Card.Body>
                 <div
+                    ref={canvasContainerRef}
                     className={styles.canvasWrapper}
                     style={{
-                        width, height,
+                        width: '100%',
+                        height: canvasHeight,
                         backgroundColor: colored ? computedBackgroundColor : '#000000'
                     }}
                 >
-                    <canvas ref={canvasRef} width={width} height={height} className={styles.canvas}/>
+                    <canvas ref={canvasRef} className={styles.canvas}/>
                 </div>
 
-                <div className={styles.controlsWrapper} style={{width}}>
+                <div
+                    className={styles.controlsWrapper}
+                    style={{
+                        width: '100%',
+                        height: controlsHeight
+                    }}
+                >
                     {partials.map((amp, index) => {
                         const fillOpacity = index === 0 ? '1' : '0.8';
 

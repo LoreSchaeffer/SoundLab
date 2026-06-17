@@ -1,0 +1,160 @@
+:root {
+    --theme-color: var(--cyan-500);
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);
+    background-color: var(--background-primary);
+    margin: -20px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.header {
+    flex: 0 0 auto;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.08);
+}
+
+.actionBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 4px 16px;
+    gap: 12px;
+}
+
+.titleWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.editIcon {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.titleInput {
+    background: transparent;
+    border: none;
+    border-bottom: 2px dashed hsl(var(--neutral-50-hsl) / 0.2);
+    font-family: 'Chewy', sans-serif;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    outline: none;
+    padding: 2px 8px;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+    width: 100%;
+    max-width: 350px;
+}
+
+.titleInput:hover {
+    background-color: hsl(var(--neutral-50-hsl) / 0.05);
+    border-bottom-color: var(--theme-color);
+}
+
+.titleInput:focus {
+    background-color: hsl(var(--neutral-50-hsl) / 0.1);
+    border-bottom-color: var(--theme-color);
+    border-bottom-style: solid;
+}
+
+.titleWrapper:hover .editIcon {
+    color: var(--theme-color);
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.closeBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+    margin-left: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background-color: hsl(var(--neutral-50-hsl) / 0.1);
+    color: var(--text-primary);
+}
+
+.tabSwitcher {
+    display: flex;
+    padding: 0 16px;
+    gap: 4px;
+}
+
+.tabBtn {
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 700;
+    font-family: var(--main-font);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+    color: var(--text-muted);
+    background-color: hsl(var(--neutral-50-hsl) / 0.03);
+}
+
+.tabBtn.activeTab {
+    color: var(--theme-color);
+    border-bottom-color: var(--theme-color);
+    background: linear-gradient(to top, color-mix(in srgb, var(--theme-color) 8%, transparent), transparent);
+}
+
+.scrollableArea {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    background-color: var(--background-primary);
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--neutral-50-hsl) / 0.2) transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    gap: 16px;
+}
+
+.curvesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.footerSection {
+    flex: 0 0 auto;
+    height: fit-content;
+    padding: 12px 16px;
+    background-color: var(--background-secondary);
+    border-top: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    box-shadow: 0 -4px 24px rgba(0,0,0, 0.2);
+}

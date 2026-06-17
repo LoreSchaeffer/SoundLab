@@ -1,14 +1,18 @@
 import styles from "./WaveformConfiguration.module.css";
-import {MdCompareArrows, MdMusicNote, MdVolumeUp, MdWaves} from "react-icons/md";
-import Select from "../forms/Select.tsx";
+import {MdAdd, MdCompareArrows, MdDelete, MdEdit, MdMusicNote, MdVolumeUp, MdWaves} from "react-icons/md";
+import Select, {type SelectOption} from "../forms/Select.tsx";
 import Slider from "../forms/Slider.tsx";
 import clsx from "clsx";
-import {commonNotes} from "../../types/music.ts";
+import {commonNotes} from "../../types";
 import Button from "../elements/Button.tsx";
 import {usePreset} from "../../contexts/PresetContext.ts";
 import {useTranslation} from "react-i18next";
-import type {Color} from "../../types";
+import type {Color, InstrumentPreset} from "../../types";
 import DraggableBadge from "./DraggableBadge.tsx";
+import React, {useCallback} from "react";
+import {useModal} from "../../pages/ModalContext.ts";
+import {useNotification} from "../../pages/NotificationContext.ts";
+import PresetEditor from "../modals/PresetEditor.tsx";
 
 type WaveformConfigurationProps = {
     color?: Color;
@@ -38,12 +42,94 @@ const WaveformConfiguration = ({
                                    onPhaseChange,
                                }: WaveformConfigurationProps) => {
     const {t} = useTranslation();
-    const {presets} = usePreset();
+    const {presets, deleteUserPreset} = usePreset();
+    const {openModal, closeModal} = useModal();
+    const {addNotification} = useNotification();
 
-    const presetOptions = presets.map(p => ({
-        value: p.id,
-        label: t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name))
-    }));
+    const deletePreset = useCallback((preset: InstrumentPreset) => {
+        const handleDelete = () => {
+            deleteUserPreset(preset.id);
+            closeModal();
+            addNotification({
+                variant: 'success',
+                message: t('notifications.inst_preset_deleted_message'),
+                duration: 4000
+            });
+        }
+
+        openModal({
+            title: t('modals.delete_inst_preset.title'),
+            size: 'sm',
+            content: <p>{t('modals.delete_inst_preset.description')}</p>,
+            footer: (
+                <>
+                    <Button
+                        color="cyan"
+                        variant="default"
+                        onClick={closeModal}
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                    <Button
+                        color="red"
+                        variant="active"
+                        onClick={handleDelete}
+                    >
+                        {t('common.delete')}
+                    </Button>
+                </>
+            )
+        });
+    }, [addNotification, closeModal, deleteUserPreset, openModal, t]);
+
+    const editPreset = useCallback((presetId?: string) => {
+        openModal({
+            size: 'xl',
+            hideHeader: true,
+            content: (
+                <PresetEditor
+                    preset={presetId ? presets.find(p => p.id === presetId) : undefined}
+                    color={color}
+                />
+            )
+        });
+    }, [color, openModal, presets]);
+
+    const presetOptions: SelectOption[] = presets.map(p => {
+        const isBasicWave = ['sine', 'square', 'triangle', 'sawtooth'].includes(p.id);
+        const rightActions = [];
+
+        if (!isBasicWave) {
+            rightActions.push({
+                icon: <MdEdit/>,
+                title: t('components.waveform_controls.edit_inst_preset'),
+                onClick: (_: React.MouseEvent, val: string) => editPreset(val)
+            });
+
+            if (!p.isFactory) {
+                rightActions.push({
+                    icon: <MdDelete/>,
+                    title: t('components.waveform_controls.delete_inst_preset'),
+                    colorClass: "var(--red-400)",
+                    onClick: () => deletePreset(p)
+                });
+            }
+        }
+
+        return {
+            value: p.id,
+            label: t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name)),
+            rightActions: rightActions.length > 0 ? rightActions : undefined
+        };
+    });
+
+    presetOptions.push({
+        value: 'action-create',
+        label: t('components.waveform_controls.create_inst_preset'),
+        leftIcon: <MdAdd/>,
+        isAction: true,
+        onClick: () => editPreset()
+    });
 
     return (
         <div>

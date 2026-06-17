@@ -1,6 +1,6 @@
 import styles from './Envelope.module.css';
 import {useCallback, useEffect, useRef} from 'react';
-import type {Color, Coord} from "../../types";
+import {type Color, type Coord, getComputedColor} from "../../types";
 import Card from "../elements/Card.tsx";
 
 export type EnvelopeData = {
@@ -30,16 +30,14 @@ const EnvelopeVisualizer = ({
                                 decay,
                                 release,
                                 triggerEvent,
-                                width = 800,
+                                width,
                                 height = 200
                             }: EnvelopeVisualizerProps) => {
+    const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number | null>(null);
 
-    const getComputedColor = useCallback((colorName: Color) => {
-        if (typeof window === 'undefined') return '#ffffff';
-        return getComputedStyle(document.documentElement).getPropertyValue(`--${colorName}-500`).trim();
-    }, []);
+    const canvasDims = useRef({w: 0, h: 0});
 
     const getBezierPoint = (t: number, p0: number, p1: number, p2: number, p3: number) => {
         const u = 1 - t;
@@ -71,7 +69,7 @@ const EnvelopeVisualizer = ({
         };
     };
 
-    const drawSegment = useCallback((ctx: CanvasRenderingContext2D, startX: number, segmentWidth: number, startLevel: number, endLevel: number, data: EnvelopeData, colorStr: string) => {
+    const drawSegment = useCallback((ctx: CanvasRenderingContext2D, startX: number, segmentWidth: number, startLevel: number, endLevel: number, data: EnvelopeData, colorStr: string, h: number) => {
         if (segmentWidth <= 0) return;
 
         ctx.strokeStyle = colorStr;
@@ -80,40 +78,42 @@ const EnvelopeVisualizer = ({
         ctx.beginPath();
 
         if (data.points && data.points.length > 0) {
-            // MSEG
+            // Draw MSEG
             data.points.forEach((p, i) => {
                 const cx = startX + (p.x * segmentWidth);
-                const cy = height - (p.y * height);
+                const cy = h - (p.y * h);
                 if (i === 0) ctx.moveTo(cx, cy);
                 else ctx.lineTo(cx, cy);
             });
             ctx.stroke();
 
+            // Draw MSEG nodes
             ctx.fillStyle = colorStr;
             data.points.forEach((p) => {
                 const cx = startX + (p.x * segmentWidth);
-                const cy = height - (p.y * height);
+                const cy = h - (p.y * h);
                 ctx.beginPath();
                 ctx.arc(cx, cy, 2, 0, Math.PI * 2);
                 ctx.fill();
             });
 
         } else if (data.handle1 && data.handle2) {
-            // BEZIER
+            // Draw Bezier
             const p0x = startX;
-            const p0y = height - (startLevel * height);
+            const p0y = h - (startLevel * h);
             const p3x = startX + segmentWidth;
-            const p3y = height - (endLevel * height);
+            const p3y = h - (endLevel * h);
 
             const c1x = startX + (data.handle1.x * segmentWidth);
-            const c1y = height - (data.handle1.y * height);
+            const c1y = h - (data.handle1.y * h);
             const c2x = startX + (data.handle2.x * segmentWidth);
-            const c2y = height - (data.handle2.y * height);
+            const c2y = h - (data.handle2.y * h);
 
             ctx.moveTo(p0x, p0y);
             ctx.bezierCurveTo(c1x, c1y, c2x, c2y, p3x, p3y);
             ctx.stroke();
 
+            // Draw Bezier endpoints
             ctx.fillStyle = colorStr;
             ctx.beginPath();
             ctx.arc(p0x, p0y, 2, 0, Math.PI * 2);
@@ -122,30 +122,63 @@ const EnvelopeVisualizer = ({
             ctx.arc(p3x, p3y, 2, 0, Math.PI * 2);
             ctx.fill();
         }
-    }, [height]);
+    }, []);
 
-    const getMappedDot = useCallback((t: number, data: EnvelopeData, startX: number, w: number, startLevel: number, endLevel: number) => {
+    const getMappedDot = useCallback((t: number, data: EnvelopeData, startX: number, w: number, startLevel: number, endLevel: number, h: number) => {
         if (data.points && data.points.length > 0) {
             const pt = getMSEGPoint(t, data.points);
             return {
                 dotX: startX + pt.x * w,
-                dotY: height - pt.y * height
+                dotY: h - pt.y * h
             };
         } else if (data.handle1 && data.handle2) {
             return {
                 dotX: getBezierPoint(t, startX, startX + data.handle1.x * w, startX + data.handle2.x * w, startX + w),
-                dotY: getBezierPoint(t, height - startLevel * height, height - data.handle1.y * height, height - data.handle2.y * height, height - endLevel * height)
+                dotY: getBezierPoint(t, h - startLevel * h, h - data.handle1.y * h, h - data.handle2.y * h, h - endLevel * h)
             };
         }
-        return {dotX: startX, dotY: height};
-    }, [height]);
+        return {dotX: startX, dotY: h};
+    }, []);
+
+    useEffect(() => {
+        const container = canvasContainerRef.current;
+        const canvas = canvasRef.current;
+        if (!container || !canvas) return;
+
+        const observer = new ResizeObserver((entries) => {
+            const {width, height} = entries[0].contentRect;
+
+            canvasDims.current = {w: width, h: height};
+
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+        });
+
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
 
     const renderFrame = useCallback((currentTime: number) => {
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!ctx || !canvas) return;
+        if (!canvas) return;
 
-        ctx.clearRect(0, 0, width, height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const {w, h} = canvasDims.current;
+        if (w === 0 || h === 0) return;
+
+        const dpr = window.devicePixelRatio || 1;
+
+        ctx.save();
+        // Scale dynamically on each frame to match current device pixel ratio
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
 
         const colorA = getComputedColor(attack.color);
         const colorD = getComputedColor(decay.color);
@@ -155,27 +188,29 @@ const EnvelopeVisualizer = ({
         const safeTotal = totalTime > 0 ? totalTime : 1;
 
         const MIN_PCT = 0.05;
-        const minPixels = width * MIN_PCT;
-        const availablePixels = width - (minPixels * 3);
+        const minPixels = w * MIN_PCT;
+        const availablePixels = w - (minPixels * 3);
 
         const wA = minPixels + ((attack.time / safeTotal) * availablePixels);
         const wD = minPixels + ((decay.time / safeTotal) * availablePixels);
         const wR = minPixels + ((release.time / safeTotal) * availablePixels);
 
-        drawSegment(ctx, 0, wA, 0.0, 1.0, attack, colorA);
-        drawSegment(ctx, wA, wD, 1.0, 0.0, decay, colorD);
+        drawSegment(ctx, 0, wA, 0.0, 1.0, attack, colorA, h);
+        drawSegment(ctx, wA, wD, 1.0, 0.0, decay, colorD, h);
 
+        // Draw separation line
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
         ctx.moveTo(wA + wD, 0);
-        ctx.lineTo(wA + wD, height);
+        ctx.lineTo(wA + wD, h);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        drawSegment(ctx, wA + wD, wR, 1.0, 0.0, release, colorR);
+        drawSegment(ctx, wA + wD, wR, 1.0, 0.0, release, colorR, h);
 
+        // Draw trigger animation
         if (triggerEvent) {
             const elapsed = currentTime - triggerEvent.timestamp;
             let dotX: number | null = null;
@@ -184,22 +219,22 @@ const EnvelopeVisualizer = ({
             if (triggerEvent.type === 'attack') {
                 if (elapsed <= attack.time) {
                     const t = attack.time > 0 ? Math.max(0, Math.min(1, elapsed / attack.time)) : 1;
-                    const res = getMappedDot(t, attack, 0, wA, 0.0, 1.0);
+                    const res = getMappedDot(t, attack, 0, wA, 0.0, 1.0, h);
                     dotX = res.dotX;
                     dotY = res.dotY;
                 } else if (elapsed <= attack.time + decay.time) {
                     const t = decay.time > 0 ? Math.max(0, Math.min(1, (elapsed - attack.time) / decay.time)) : 1;
-                    const res = getMappedDot(t, decay, wA, wD, 1.0, 0.0);
+                    const res = getMappedDot(t, decay, wA, wD, 1.0, 0.0, h);
                     dotX = res.dotX;
                     dotY = res.dotY;
                 } else {
                     dotX = wA + wD;
-                    dotY = height;
+                    dotY = h;
                 }
             } else if (triggerEvent.type === 'release') {
                 if (elapsed <= release.time) {
                     const t = release.time > 0 ? Math.max(0, Math.min(1, elapsed / release.time)) : 1;
-                    const res = getMappedDot(t, release, wA + wD, wR, 1.0, 0.0);
+                    const res = getMappedDot(t, release, wA + wD, wR, 1.0, 0.0, h);
                     dotX = res.dotX;
                     dotY = res.dotY;
                 }
@@ -212,7 +247,9 @@ const EnvelopeVisualizer = ({
                 ctx.fill();
             }
         }
-    }, [attack, decay, release, width, height, drawSegment, getComputedColor, triggerEvent, getMappedDot]);
+
+        ctx.restore();
+    }, [attack, decay, release, triggerEvent, drawSegment, getMappedDot]);
 
     useEffect(() => {
         const loop = (time: number) => {
@@ -228,16 +265,22 @@ const EnvelopeVisualizer = ({
     }, [renderFrame]);
 
     return (
-        <Card elevation={4} className={styles.container} style={{width: width + 26}}>
+        <Card
+            elevation={4}
+            className={styles.container}
+            style={{flex: '1 0 auto', minWidth: '300px', width: width ? `${width}px` : '100%'}}
+        >
             <Card.Header className={styles.header}>
                 <span className={styles.title}>Envelope</span>
             </Card.Header>
             <Card.Body>
-                <div className={styles.canvasWrapper} style={{width, height}}>
+                <div
+                    ref={canvasContainerRef}
+                    className={styles.canvasWrapper}
+                    style={{width: '100%', height}}
+                >
                     <canvas
                         ref={canvasRef}
-                        width={width}
-                        height={height}
                         className={styles.canvas}
                     />
                 </div>

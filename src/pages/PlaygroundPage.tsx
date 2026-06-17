@@ -107,7 +107,7 @@ const PlaygroundPage = () => {
 
             <div className={styles.layout}>
                 <div className={styles.visualizerCol}>
-                    <WaveformVisualizer title={t('components.waveform_viewer.title')} waves={currentWaves}/>
+                    <WaveformVisualizer waves={currentWaves}/>
                 </div>
 
                 <div className={styles.controlsCol}>

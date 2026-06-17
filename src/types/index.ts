@@ -1,4 +1,7 @@
+export * from './audio';
 export * from './colors';
+export * from './music';
+export * from './preset';
 
 export type Coord = {
     x: number;

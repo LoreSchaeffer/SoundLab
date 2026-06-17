@@ -51,9 +51,11 @@ export const PresetProvider = ({children}: { children: ReactNode }) => {
         }
     }, [allPresets]);
 
-    const saveUserPreset = useCallback((name: string, partials: number[]) => {
+    const saveUserPreset = useCallback((id: string, name: string, partials: number[]) => {
+        if (allPresets.some(p => p.id === id)) id = id + crypto.randomUUID();
+        
         const newPreset: InstrumentPreset = {
-            id: crypto.randomUUID(),
+            id: id,
             name,
             isFactory: false,
             oscillatorType: 'custom',
@@ -68,7 +70,7 @@ export const PresetProvider = ({children}: { children: ReactNode }) => {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedPresets));
 
         loadPreset(newPreset.id);
-    }, [attackData, decayData, releaseData, userPresets, loadPreset]);
+    }, [allPresets, attackData, decayData, releaseData, userPresets, loadPreset]);
 
     const deleteUserPreset = useCallback((id: string) => {
         const updatedPresets = userPresets.filter(p => p.id !== id);
