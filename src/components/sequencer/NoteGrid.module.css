@@ -58,3 +58,12 @@
     pointer-events: none;
     will-change: transform;
 }
+
+.hoveredRow {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background-color: hsl(var(--neutral-50-hsl) / 0.08);
+    pointer-events: none;
+    z-index: 1;
+}

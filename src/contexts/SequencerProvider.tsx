@@ -1,40 +1,72 @@
-import {type ReactNode, useCallback, useState} from "react";
+import {type ReactNode, useCallback, useEffect, useMemo, useState} from "react";
 import {type NoteEvent, SequencerContext, type Track} from "./SequencerContext.ts";
 
-export const SequencerProvider = ({children}: { children: ReactNode }) => {
-    const [bpm, setBpm] = useState<number>(120);
-    const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [playheadBeat, setPlayheadBeat] = useState<number>(0);
-    const [totalBeats, setTotalBeats] = useState<number>(32); // Default: 8 misure da 4/4
+const createDefaultTrack = (): Track => ({
+    id: crypto.randomUUID(),
+    name: "Track 1",
+    presetId: "sine",
+    volume: 0.8,
+    isMuted: false,
+    isSolo: false,
+    isExpanded: true,
+    notes: []
+});
 
-    const [tracks, setTracks] = useState<Track[]>([
-        {
-            id: crypto.randomUUID(),
-            name: "Track 1",
-            presetId: null,
-            volume: 0.8,
-            isMuted: false,
-            isSolo: false,
-            isExpanded: true,
-            notes: []
+export const SequencerProvider = ({children}: { children: ReactNode }) => {
+    const initialState = useMemo(() => {
+        try {
+            const saved = localStorage.getItem('daw_project');
+            if (saved) return JSON.parse(saved);
+        } catch {
+            console.error("Error reading daw project");
         }
-    ]);
+        return null;
+    }, []);
+
+    const [bpm, setBpm] = useState<number>(initialState?.bpm || 120);
+    const [masterVolume, setMasterVolume] = useState<number>(initialState?.masterVolume ?? 0.8);
+    const [tracks, setTracks] = useState<Track[]>(initialState?.tracks || [createDefaultTrack()]);
+
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [isLooping, setIsLooping] = useState<boolean>(false);
+    const [playheadBeat, setPlayheadBeat] = useState<number>(0);
+
+    useEffect(() => {
+        localStorage.setItem('daw_project', JSON.stringify({bpm, tracks, masterVolume}));
+    }, [bpm, tracks, masterVolume]);
 
     const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
+    const toggleLoop = useCallback(() => setIsLooping(p => !p), []);
+
+    const totalBeats = useMemo(() => {
+        let maxEnd = 0;
+        tracks.forEach(t => t.notes.forEach(n => {
+            const end = n.startBeat + n.durationBeats;
+            if (end > maxEnd) maxEnd = end;
+        }));
+        return Math.max(32, Math.ceil((maxEnd + 16) / 4) * 4);
+    }, [tracks]);
+
+    const clearProject = useCallback(() => {
+        setTracks([createDefaultTrack()]);
+        setBpm(120);
+        setMasterVolume(0.8);
+        setPlayheadBeat(0);
+        setIsPlaying(false);
+    }, []);
+
+    const loadProject = useCallback((data: { bpm: number; tracks: Track[]; masterVolume?: number }) => {
+        if (data.bpm) setBpm(data.bpm);
+        if (data.tracks) setTracks(data.tracks);
+        if (data.masterVolume !== undefined) setMasterVolume(data.masterVolume);
+        setPlayheadBeat(0);
+        setIsPlaying(false);
+    }, []);
 
     const addTrack = useCallback(() => {
         setTracks(prev => [
             ...prev,
-            {
-                id: crypto.randomUUID(),
-                name: `Track ${prev.length + 1}`,
-                presetId: null,
-                volume: 0.8,
-                isMuted: false,
-                isSolo: false,
-                isExpanded: false,
-                notes: []
-            }
+            {...createDefaultTrack(), name: `Track ${prev.length + 1}`, isExpanded: false}
         ]);
     }, []);
 
@@ -56,7 +88,6 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const addNote = useCallback((trackId: string, noteData: Omit<NoteEvent, 'id'>) => {
         setTracks(prev => prev.map(t => {
             if (t.id !== trackId) return t;
-
             return {
                 ...t,
                 notes: [...t.notes, {...noteData, id: crypto.randomUUID()}]
@@ -67,7 +98,6 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const updateNote = useCallback((trackId: string, noteId: string, updates: Partial<NoteEvent>) => {
         setTracks(prev => prev.map(t => {
             if (t.id !== trackId) return t;
-
             return {
                 ...t,
                 notes: t.notes.map(n => n.id === noteId ? {...n, ...updates} : n)
@@ -78,7 +108,6 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const removeNote = useCallback((trackId: string, noteId: string) => {
         setTracks(prev => prev.map(t => {
             if (t.id !== trackId) return t;
-
             return {
                 ...t,
                 notes: t.notes.filter(n => n.id !== noteId)
@@ -88,12 +117,33 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
 
     return (
         <SequencerContext.Provider value={{
-            bpm, setBpm,
-            isPlaying, togglePlay,
-            playheadBeat, setPlayheadBeat,
-            totalBeats, setTotalBeats,
-            tracks, addTrack, removeTrack, updateTrack, toggleTrackExpand,
-            addNote, updateNote, removeNote
+            bpm,
+            setBpm,
+            isPlaying,
+            setIsPlaying,
+            togglePlay,
+            isLooping,
+            toggleLoop,
+
+            masterVolume,
+            setMasterVolume,
+
+            playheadBeat,
+            setPlayheadBeat,
+            totalBeats,
+
+            tracks,
+            addTrack,
+            removeTrack,
+            updateTrack,
+            toggleTrackExpand,
+
+            addNote,
+            updateNote,
+            removeNote,
+
+            clearProject,
+            loadProject
         }}>
             {children}
         </SequencerContext.Provider>

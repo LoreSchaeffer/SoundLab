@@ -25,6 +25,8 @@
     "high": "Acuto",
     "piano": "Piano",
     "forte": "Forte",
+    "volume": "Volume",
+    "master_volume": "MASTER",
     "play": "Play",
     "stop": "Stop",
     "pause": "Pausa",
@@ -34,7 +36,10 @@
     "close": "Chiudi",
     "oscillator": "Oscillatore",
     "envelope": "Inviluppo",
-    "select_inst_preset": "Seleziona strumento"
+    "select_inst_preset": "Seleziona strumento",
+    "import": "Importa",
+    "export": "Esporta",
+    "clear": "Cancella"
   },
   "nav": {
     "playground": "Parcogiochi Onde",
@@ -81,6 +86,10 @@
     "delete_track": {
       "title": "Elimina Traccia",
       "description": "Sei sicuro di voler cancellare questa traccia?"
+    },
+    "clear_sequencer_project": {
+      "title": "Cancella Progetto",
+      "description": "Sei sicuro di voler cancellare l'intero progetto? Tutte le tracce saranno eliminate."
     }
   },
   "notifications": {
@@ -90,6 +99,12 @@
     "inst_preset_saved": {
       "saved": "Preset salvato con successo.",
       "saved_copy": "Preset salvato come copia."
+    },
+    "sequencer": {
+      "project_exported": "Progetto esportato con successo.",
+      "project_imported": "Progetto importato con successo.",
+      "project_import_error": "Errore durante l'importazione del progetto.",
+      "project_cleared": "Progetto cancellato con successo."
     }
   },
   "homepage": {

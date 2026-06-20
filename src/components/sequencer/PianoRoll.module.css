@@ -16,6 +16,7 @@
     position: sticky;
     left: 0;
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
+    align-items: flex-end;
 }
 
 .gridWrapper {

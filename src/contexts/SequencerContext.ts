@@ -24,11 +24,17 @@ type SequencerContextType = {
     bpm: number;
     setBpm: (bpm: number) => void;
     isPlaying: boolean;
+    setIsPlaying: (playing: boolean) => void;
     togglePlay: () => void;
+    isLooping: boolean;
+    toggleLoop: () => void;
+
+    masterVolume: number;
+    setMasterVolume: (v: number) => void;
+
     playheadBeat: number;
     setPlayheadBeat: Dispatch<SetStateAction<number>>;
     totalBeats: number; // Project length
-    setTotalBeats: (beats: number) => void;
 
     // Tracks state
     tracks: Track[];
@@ -41,6 +47,10 @@ type SequencerContextType = {
     addNote: (trackId: string, note: Omit<NoteEvent, 'id'>) => void;
     updateNote: (trackId: string, noteId: string, updates: Partial<NoteEvent>) => void;
     removeNote: (trackId: string, noteId: string) => void;
+
+    // Project Management
+    clearProject: () => void;
+    loadProject: (data: { bpm: number; tracks: Track[] }) => void;
 }
 
 export const SequencerContext = createContext<SequencerContextType | undefined>(undefined);

@@ -42,7 +42,7 @@
 }
 
 .keyWhite:hover {
-    background-color: #e2e8f0;
+    background-color: #cbd5e1;
 }
 
 .keyBlack {
@@ -55,10 +55,18 @@
 }
 
 .keyBlack:hover {
-    background-color: #334155;
+    background-color: #3b4c66;
 }
 
 .active {
     background-color: var(--cyan-500) !important;
     color: #fff;
+}
+
+.hoveredWhite {
+    background-color: #cbd5e1;
+}
+
+.hoveredBlack {
+    background-color: #3b4c66;
 }

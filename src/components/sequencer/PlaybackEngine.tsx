@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {useSequencer} from '../../contexts/SequencerContext.ts';
 import {useSynth} from '../../contexts/SynthContext.ts';
 import {usePreset} from '../../contexts/PresetContext.ts';
@@ -13,19 +13,33 @@ type EnvData = {
 };
 
 const PlaybackEngine = () => {
-    const {isPlaying, bpm, setPlayheadBeat, tracks, totalBeats} = useSequencer();
+    const {isPlaying, setIsPlaying, bpm, playheadBeat, setPlayheadBeat, tracks, isLooping, masterVolume} = useSequencer();
     const {playNote, releaseNote, registerChannel, updateChannelConfig} = useSynth();
     const {presets} = usePreset();
 
     const lastTimeRef = useRef<number>(0);
     const activeNotesRef = useRef<Map<string, { channelId: string, pitch: string, endBeat: number }>>(new Map());
+    const playheadRef = useRef(playheadBeat);
+
+    useEffect(() => {
+        playheadRef.current = playheadBeat;
+    }, [playheadBeat]);
+
+    const actualLastBeat = useMemo(() => {
+        let maxEnd = 0;
+        tracks.forEach(t => t.notes.forEach(n => {
+            const end = n.startBeat + n.durationBeats;
+            if (end > maxEnd) maxEnd = end;
+        }));
+        return maxEnd > 0 ? maxEnd : 32;
+    }, [tracks]);
 
     useEffect(() => {
         const isAnySolo = tracks.some(t => t.isSolo);
 
         tracks.forEach(track => {
             const preset = presets.find(p => p.id === track.presetId);
-            let actualVolume = track.volume;
+            let actualVolume = track.volume * masterVolume;
 
             if (track.isMuted) actualVolume = 0;
             if (isAnySolo && !track.isSolo) actualVolume = 0;
@@ -45,7 +59,7 @@ const PlaybackEngine = () => {
             const config = {
                 name: track.name,
                 volume: actualVolume,
-                oscillatorType: "custom" as const,
+                oscillatorType: (preset?.oscillatorType as "sine" | "square" | "sawtooth" | "triangle" | "custom") || "sine",
                 partials: partials,
                 envelope: {
                     attack: Math.max(0.001, atk.time / 1000),
@@ -61,7 +75,6 @@ const PlaybackEngine = () => {
             registerChannel({id: track.id, ...config});
             updateChannelConfig(track.id, config);
         });
-
     }, [tracks, presets, registerChannel, updateChannelConfig]);
 
 
@@ -83,45 +96,46 @@ const PlaybackEngine = () => {
             const beatsPerSecond = bpm / 60;
             const deltaBeats = (deltaMs / 1000) * beatsPerSecond;
 
-            setPlayheadBeat((prevBeat: number) => {
-                let nextBeat = prevBeat + deltaBeats;
+            const prevBeat = playheadRef.current;
+            const nextBeat = prevBeat + deltaBeats;
 
-                if (nextBeat > totalBeats) {
-                    nextBeat = 0;
-                    activeNotesRef.current.forEach((val) => releaseNote(val.channelId, val.pitch));
-                    activeNotesRef.current.clear();
+            if (nextBeat >= actualLastBeat) {
+                activeNotesRef.current.forEach((val) => releaseNote(val.channelId, val.pitch));
+                activeNotesRef.current.clear();
+
+                if (isLooping) {
+                    playheadRef.current = 0;
+                    setPlayheadBeat(0);
+                    animationFrameId = requestAnimationFrame(loop);
+                } else {
+                    setPlayheadBeat(0);
+                    setIsPlaying(false);
                 }
+                return;
+            }
 
-                tracks.forEach(track => {
-                    if (!track.presetId) return;
+            tracks.forEach(track => {
+                if (!track.presetId) return;
 
-                    track.notes.forEach(note => {
-                        const noteEnd = note.startBeat + note.durationBeats;
-
-                        if (note.startBeat >= prevBeat && note.startBeat < nextBeat) {
-                            const activeId = `${track.id}_${note.id}`;
-
-                            playNote(track.id, note.pitch, note.velocity);
-
-                            activeNotesRef.current.set(activeId, {
-                                channelId: track.id,
-                                pitch: note.pitch,
-                                endBeat: noteEnd
-                            });
-                        }
-                    });
-                });
-
-                // RELEASE: La testina incrocia la fine della nota
-                activeNotesRef.current.forEach((val, activeId) => {
-                    if (val.endBeat >= prevBeat && val.endBeat < nextBeat) {
-                        releaseNote(val.channelId, val.pitch);
-                        activeNotesRef.current.delete(activeId);
+                track.notes.forEach(note => {
+                    const noteEnd = note.startBeat + note.durationBeats;
+                    if (note.startBeat >= prevBeat && note.startBeat < nextBeat) {
+                        const activeId = `${track.id}_${note.id}`;
+                        playNote(track.id, note.pitch, note.velocity);
+                        activeNotesRef.current.set(activeId, {channelId: track.id, pitch: note.pitch, endBeat: noteEnd});
                     }
                 });
-
-                return nextBeat;
             });
+
+            activeNotesRef.current.forEach((val, activeId) => {
+                if (val.endBeat >= prevBeat && val.endBeat < nextBeat) {
+                    releaseNote(val.channelId, val.pitch);
+                    activeNotesRef.current.delete(activeId);
+                }
+            });
+
+            playheadRef.current = nextBeat;
+            setPlayheadBeat(nextBeat);
 
             animationFrameId = requestAnimationFrame(loop);
         };
@@ -129,7 +143,7 @@ const PlaybackEngine = () => {
         animationFrameId = requestAnimationFrame(loop);
 
         return () => cancelAnimationFrame(animationFrameId);
-    }, [isPlaying, bpm, tracks, totalBeats, playNote, releaseNote, setPlayheadBeat]);
+    }, [isPlaying, bpm, tracks, actualLastBeat, isLooping, setIsPlaying, playNote, releaseNote, setPlayheadBeat]);
 
     return null;
 };

@@ -5,11 +5,14 @@ import {BEAT_WIDTH, KEY_HEIGHT, PIANO_ROLL_HEIGHT, PIANO_ROLL_KEYS} from "../../
 
 type NoteGridProps = {
     track: Track;
+    hoveredNote?: string | null;
+    onPreviewNote?: (pitch: string) => void;
+    onHoverNote?: (pitch: string | null) => void;
 };
 
 const SNAP_RESOLUTION = 4;
 
-const NoteGrid = ({track}: NoteGridProps) => {
+const NoteGrid = ({track, hoveredNote, onPreviewNote, onHoverNote}: NoteGridProps) => {
     const {addNote, removeNote, updateNote, totalBeats, playheadBeat} = useSequencer();
 
     const [dragState, setDragState] = useState<{
@@ -65,13 +68,27 @@ const NoteGrid = ({track}: NoteGridProps) => {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        const beat = Math.floor((x / BEAT_WIDTH) * SNAP_RESOLUTION) / SNAP_RESOLUTION;
+        const beat = Math.floor(x / BEAT_WIDTH);
+
         const keyIndex = Math.floor(y / KEY_HEIGHT);
         const pitch = PIANO_ROLL_KEYS[keyIndex]?.note;
 
         if (pitch) {
             addNote(track.id, {pitch, startBeat: beat, durationBeats: 1, velocity: 0.8});
+            onPreviewNote?.(pitch);
         }
+    };
+
+    const handleGridMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const keyIndex = Math.floor(y / KEY_HEIGHT);
+        const pitch = PIANO_ROLL_KEYS[keyIndex]?.note || null;
+        onHoverNote?.(pitch);
+    };
+
+    const handleGridMouseLeave = () => {
+        onHoverNote?.(null);
     };
 
     const handleNoteMouseDown = (e: React.MouseEvent, noteId: string, isResize: boolean) => {
@@ -109,6 +126,9 @@ const NoteGrid = ({track}: NoteGridProps) => {
             }}
             onMouseDown={handleGridClick}
             onContextMenu={(e) => e.preventDefault()}
+
+            onMouseMove={handleGridMouseMove}
+            onMouseLeave={handleGridMouseLeave}
         >
             {track.notes.map(note => {
                 const keyIndex = PIANO_ROLL_KEYS.findIndex(k => k.note === note.pitch);
@@ -127,6 +147,17 @@ const NoteGrid = ({track}: NoteGridProps) => {
                         onMouseDown={(e) => handleNoteMouseDown(e, note.id, false)}
                         onContextMenu={(e) => handleNoteContextMenu(e, note.id)}
                     >
+
+                        {hoveredNote && (
+                            <div
+                                className={styles.hoveredRow}
+                                style={{
+                                    top: `${PIANO_ROLL_KEYS.findIndex(k => k.note === hoveredNote) * KEY_HEIGHT}px`,
+                                    height: `${KEY_HEIGHT}px`
+                                } as React.CSSProperties}
+                            />
+                        )}
+
                         <div
                             className={styles.resizeHandle}
                             onMouseDown={(e) => handleNoteMouseDown(e, note.id, true)}

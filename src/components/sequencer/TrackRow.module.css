@@ -13,10 +13,11 @@
 .mainRow {
     display: flex;
     height: 60px;
+    min-width: max-content;
 }
 
 .headerSpacer {
-    width: 80px;
+    width: 260px;
     flex-shrink: 0;
     position: sticky;
     left: 0;
@@ -29,11 +30,21 @@
     background-color: var(--background-secondary);
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
     border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
-    padding: 8px 12px;
+    padding: 6px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+}
+
+.headerTop,
+.headerBottom {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
     gap: 8px;
-    box-sizing: border-box;
 }
 
 .muteSoloBtn {
@@ -94,11 +105,10 @@
 
 .trackInfo {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
     flex: 1;
     min-width: 0;
-    padding-right: 4px;
+    gap: 4px;
 }
 
 .trackName {
@@ -106,12 +116,11 @@
     border: none;
     color: var(--text-primary);
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     outline: none;
     width: 100%;
     text-overflow: ellipsis;
     padding: 0;
-    margin-bottom: 2px;
 }
 
 .trackName:focus {
@@ -136,6 +145,7 @@
     margin-left: -6px;
     border-radius: 4px;
     width: fit-content;
+    min-width: 150px;
     max-width: 100%;
 }
 
@@ -193,9 +203,22 @@
 }
 
 .timelinePreview {
-    flex: 1;
     position: relative;
     cursor: pointer;
+    overflow: hidden;
+    height: 100%;
+    background-image: linear-gradient(to right, hsl(var(--neutral-50-hsl) / 0.05) 1px, transparent 1px);
+    background-position: 0 0;
+}
+
+.previewNote {
+    position: absolute;
+    background-color: var(--cyan-500);
+    height: 4px;
+    border-radius: 2px;
+    opacity: 0.8;
+    pointer-events: none;
+    transform: translateY(-50%);
 }
 
 .accordionArea {
@@ -206,5 +229,10 @@
     box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.2);
     display: flex;
     color: var(--text-muted);
-    overflow: hidden; /* Necessario affinché 'resize' funzioni */
+    overflow: hidden;
+}
+
+.trackVolumeSlider {
+    width: 70px;
+    flex-shrink: 0;
 }

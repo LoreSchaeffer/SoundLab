@@ -1,6 +1,7 @@
 import styles from './Slider.module.css';
 import React, {useMemo} from 'react';
 import {type Color, getComputedColor} from '../../types';
+import clsx from 'clsx';
 
 export interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'color'> {
     value: number;
@@ -8,6 +9,7 @@ export interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
     color?: Color;
     leftLabel?: string;
     rightLabel?: string;
+    compact?: boolean;
 }
 
 const Slider: React.FC<SliderProps> = ({
@@ -21,6 +23,7 @@ const Slider: React.FC<SliderProps> = ({
                                            rightLabel,
                                            className,
                                            style,
+                                           compact = false,
                                            ...props
                                        }) => {
     const computedColor = useMemo(() => getComputedColor(color), [color]);
@@ -35,7 +38,7 @@ const Slider: React.FC<SliderProps> = ({
     } as React.CSSProperties;
 
     return (
-        <div className={`${styles.sliderWrapper} ${className || ''}`} style={customStyle}>
+        <div className={clsx(styles.sliderWrapper, className)} style={customStyle}>
             <input
                 type="range"
                 min={min}
@@ -43,7 +46,7 @@ const Slider: React.FC<SliderProps> = ({
                 step={step}
                 value={value}
                 onChange={handleChange}
-                className={styles.slider}
+                className={clsx(styles.slider, compact && styles.compact)}
                 {...props}
             />
             {(leftLabel || rightLabel) && (
