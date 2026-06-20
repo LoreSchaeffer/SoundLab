@@ -1,6 +1,6 @@
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from "react";
 import {PresetContext} from "./PresetContext.ts";
-import type {InstrumentPreset, PhaseState} from "../types/preset.ts";
+import type {InstrumentPreset, PhaseState} from "../types";
 
 const LOCAL_STORAGE_KEY = 'sl_user_presets';
 

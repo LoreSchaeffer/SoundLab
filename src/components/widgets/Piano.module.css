@@ -1,8 +1,22 @@
 .container {
     background-color: #0a0a0a;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--neutral-50-hsl) / 0.2) transparent;
+}
+
+.container::-webkit-scrollbar {
+    height: 6px;
+}
+.container::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--neutral-50-hsl) / 0.2);
+    border-radius: 10px;
 }
 
 .keyboardWrapper {
@@ -10,6 +24,7 @@
     position: relative;
     user-select: none;
     touch-action: none;
+    width: max-content;
 }
 
 .key {

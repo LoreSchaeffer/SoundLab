@@ -8,3 +8,5 @@ export const commonNotes = [
     {note: 'B', alteration: '4', frequency: 493.88},
     {note: 'C', alteration: '5', frequency: 523.25}
 ];
+
+export const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

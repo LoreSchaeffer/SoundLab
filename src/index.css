@@ -308,6 +308,8 @@
     --gutter-x: 8px;
     --gutter-y: 8px;
     --padding: 10px;
+
+    --track-row-header-width: 260px;
 }
 
 * {

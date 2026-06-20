@@ -13,8 +13,8 @@ import WaveformVisualizer from "../widgets/WaveformVisualizer.tsx";
 import Envelope, {type TriggerEvent} from "../widgets/Envelope.tsx";
 import Piano from "../widgets/Piano.tsx";
 import clsx from "clsx";
-import {useModal} from "../../pages/ModalContext.ts";
-import {useNotification} from "../../pages/NotificationContext.ts";
+import {useModal} from "../../contexts/ModalContext.ts";
+import {useNotification} from "../../contexts/NotificationContext.ts";
 
 const PREVIEW_CHANNEL_ID = "preset-editor-preview";
 
@@ -23,15 +23,16 @@ type TabType = 'osc' | 'env';
 type PresetEditorProps = {
     preset?: InstrumentPreset;
     color?: Color;
+    onSave?: (id: string) => void;
 }
 
-const PresetEditor = ({preset, color = "cyan"}: PresetEditorProps) => {
+const PresetEditor = ({preset, color = "cyan", onSave}: PresetEditorProps) => {
     const {t} = useTranslation();
     const {closeModal} = useModal();
     const {addNotification} = useNotification();
     const [activeTab, setActiveTab] = useState<TabType>('osc');
 
-    const {saveUserPreset, deleteUserPreset, attackData, setAttackData, decayData, setDecayData, releaseData, setReleaseData} = usePreset();
+    const {saveUserPreset, deleteUserPreset, attackData, setAttackData, decayData, setDecayData, releaseData, setReleaseData, presets} = usePreset();
     const {registerChannel, unregisterChannel, updateChannelConfig, playNote, releaseNote} = useSynth();
 
     const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
@@ -106,15 +107,22 @@ const PresetEditor = ({preset, color = "cyan"}: PresetEditorProps) => {
         const name = presetName.trim();
         if (!name) return;
 
-        const id = preset && !isSystemPreset
-            ? preset.id
-            : name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+        let id: string;
+
+        if (preset && !isSystemPreset) {
+            id = preset.id;
+        } else {
+            id = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+            if (presets.find(p => p.id === id))  id = id + crypto.randomUUID();
+        }
 
         saveUserPreset(id, name, partials);
         addNotification({
             variant: "success",
             message: isSystemPreset ? t("notifications.inst_preset_saved.saved_copy") : t("notifications.inst_preset_saved.saved")
         });
+        onSave?.(id);
+
         closeModal();
     };
 
@@ -134,7 +142,7 @@ const PresetEditor = ({preset, color = "cyan"}: PresetEditorProps) => {
             release: releaseData
         };
 
-        const blob = new Blob([JSON.stringify(presetExport, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(presetExport, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -225,6 +233,7 @@ const PresetEditor = ({preset, color = "cyan"}: PresetEditorProps) => {
                             partials={partials}
                             onPartialsChange={setPartials}
                             height={230}
+                            graphHeightRatio={0.4}
                         />
                     </>
                 ) : (
@@ -299,6 +308,8 @@ const PresetEditor = ({preset, color = "cyan"}: PresetEditorProps) => {
                         setActiveNotes(prev => new Set(prev).add(n));
                     }}
                     releaseNote={(n) => {
+                        if (!activeNotes.has(n)) return;
+
                         releaseNote(PREVIEW_CHANNEL_ID, n);
                         setActiveNotes(prev => {
                             const next = new Set(prev);

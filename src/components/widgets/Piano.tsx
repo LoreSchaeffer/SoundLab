@@ -1,6 +1,7 @@
 import styles from "./Piano.module.css";
 import React, {useEffect, useMemo, useRef} from "react";
 import clsx from "clsx";
+import {noteNames} from "../../types";
 
 type KeyType = 'white' | 'black';
 
@@ -19,8 +20,6 @@ type PianoProps = {
     showKeys?: boolean;
 }
 
-const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
 const generateKeys = (start: string, end: string): NoteDef[] => {
     const keys: NoteDef[] = [];
     let current = start;
@@ -36,9 +35,9 @@ const generateKeys = (start: string, end: string): NoteDef[] => {
 
         if (current === end) break;
 
-        const noteIndex = NOTES.indexOf(noteName);
+        const noteIndex = noteNames.indexOf(noteName);
         if (noteIndex === 11) current = `C${octave + 1}`;
-        else current = `${NOTES[noteIndex + 1]}${octave}`;
+        else current = `${noteNames[noteIndex + 1]}${octave}`;
 
         if (keys.length > 88) break;
     }
@@ -94,11 +93,15 @@ const Piano = ({
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.repeat) return;
+            if (e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
             const note = keyboardMap[e.key.toLowerCase()];
             if (note) playNote(note);
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
             const note = keyboardMap[e.key.toLowerCase()];
             if (note) releaseNote(note);
         };

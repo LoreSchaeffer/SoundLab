@@ -27,12 +27,14 @@
     "forte": "Forte",
     "play": "Play",
     "stop": "Stop",
+    "pause": "Pausa",
     "wave": "Onda",
     "cancel": "Annulla",
     "delete": "Elimina",
     "close": "Chiudi",
     "oscillator": "Oscillatore",
-    "envelope": "Inviluppo"
+    "envelope": "Inviluppo",
+    "select_inst_preset": "Seleziona strumento"
   },
   "nav": {
     "playground": "Parcogiochi Onde",
@@ -75,6 +77,10 @@
       "save_title": "Salva Preset",
       "save_json_title": "Salva Preset come JSON",
       "delete_title": "Elimina Preset"
+    },
+    "delete_track": {
+      "title": "Elimina Traccia",
+      "description": "Sei sicuro di voler cancellare questa traccia?"
     }
   },
   "notifications": {
@@ -100,5 +106,8 @@
     "description": "Aggiungi onde, modifica le frequenze e scopri come l'interferenza crea timbri complessi!",
     "sources": "Sorgenti",
     "add_wave": "Nuova Onda"
+  },
+  "sequencer": {
+    "add_track": "Aggiungi Traccia"
   }
 }

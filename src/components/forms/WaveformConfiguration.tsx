@@ -10,8 +10,8 @@ import {useTranslation} from "react-i18next";
 import type {Color, InstrumentPreset} from "../../types";
 import DraggableBadge from "./DraggableBadge.tsx";
 import React, {useCallback} from "react";
-import {useModal} from "../../pages/ModalContext.ts";
-import {useNotification} from "../../pages/NotificationContext.ts";
+import {useModal} from "../../contexts/ModalContext.ts";
+import {useNotification} from "../../contexts/NotificationContext.ts";
 import PresetEditor from "../modals/PresetEditor.tsx";
 
 type WaveformConfigurationProps = {
@@ -49,10 +49,14 @@ const WaveformConfiguration = ({
     const deletePreset = useCallback((preset: InstrumentPreset) => {
         const handleDelete = () => {
             deleteUserPreset(preset.id);
+            
+            const firstAvailable = presets.find(p => p.id !== preset.id);
+            if (firstAvailable) onPresetChange(firstAvailable.id);
+
             closeModal();
             addNotification({
                 variant: 'success',
-                message: t('notifications.inst_preset_deleted_message'),
+                message: t('notifications.inst_preset_deleted.message'),
                 duration: 4000
             });
         }
@@ -80,7 +84,7 @@ const WaveformConfiguration = ({
                 </>
             )
         });
-    }, [addNotification, closeModal, deleteUserPreset, openModal, t]);
+    }, [addNotification, closeModal, deleteUserPreset, onPresetChange, openModal, presets, t]);
 
     const editPreset = useCallback((presetId?: string) => {
         openModal({
@@ -90,10 +94,11 @@ const WaveformConfiguration = ({
                 <PresetEditor
                     preset={presetId ? presets.find(p => p.id === presetId) : undefined}
                     color={color}
+                    onSave={(id) => onPresetChange(id)}
                 />
-            )
+            ),
         });
-    }, [color, openModal, presets]);
+    }, [color, onPresetChange, openModal, presets]);
 
     const presetOptions: SelectOption[] = presets.map(p => {
         const isBasicWave = ['sine', 'square', 'triangle', 'sawtooth'].includes(p.id);

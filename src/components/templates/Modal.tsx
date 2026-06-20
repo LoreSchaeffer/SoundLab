@@ -2,7 +2,7 @@ import styles from './Modal.module.css';
 import React, {useEffect} from 'react';
 import {MdClose} from 'react-icons/md';
 import clsx from 'clsx';
-import type {ModalConfig} from "../../pages/ModalContext.ts";
+import type {ModalConfig} from "../../contexts/ModalContext.ts";
 
 type ModalProps = {
     isOpen: boolean;

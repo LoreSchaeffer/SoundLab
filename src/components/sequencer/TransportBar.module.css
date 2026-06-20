@@ -1,0 +1,36 @@
+.container {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.08);
+    gap: 24px;
+    flex: 0 0 auto;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+}
+
+.display {
+    background-color: var(--background-primary);
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cyan-500);
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    letter-spacing: 2px;
+}
+
+.bpmWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.bpmBadge {
+    margin-left: 10px;
+}

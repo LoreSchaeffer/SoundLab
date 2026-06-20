@@ -182,7 +182,6 @@ const MixerPage = () => {
 
             <div className={styles.visualizerSection}>
                 <WaveformVisualizer
-                    title={t('components.waveform_viewer.title')}
                     titleColor="orange"
                     waves={activeVisualizerWaves}
                     showToggles={false}

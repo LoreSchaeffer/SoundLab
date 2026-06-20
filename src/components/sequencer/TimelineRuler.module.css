@@ -1,0 +1,49 @@
+.container {
+    position: relative;
+    height: 100%;
+    min-width: 100%;
+    background-color: var(--background-secondary);
+    cursor: text;
+    user-select: none;
+    background-image: linear-gradient(to right, hsl(var(--neutral-50-hsl) / 0.05) 1px, transparent 1px);
+    background-size: var(--beat-width) 100%;
+}
+
+.barMarker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: hsl(var(--neutral-50-hsl) / 0.3);
+}
+
+.barNumber {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-family: var(--main-font);
+}
+
+.playheadMarker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    z-index: 50;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.playheadTriangle {
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 10px solid var(--orange-500);
+}

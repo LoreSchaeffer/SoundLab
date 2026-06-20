@@ -1,0 +1,158 @@
+import styles from './TrackRow.module.css';
+import {useEffect, useRef, useState} from 'react';
+import clsx from 'clsx';
+import {MdDelete, MdKeyboardArrowDown, MdKeyboardArrowRight, MdMusicNote} from 'react-icons/md';
+import {type Track, useSequencer} from "../../contexts/SequencerContext.ts";
+import PianoRoll from "./PianoRoll.tsx";
+import {usePreset} from "../../contexts/PresetContext.ts";
+import {useTranslation} from "react-i18next";
+import Button from "../elements/Button.tsx";
+import {useModal} from "../../contexts/ModalContext.ts";
+
+type TrackRowProps = {
+    track: Track;
+};
+
+const TrackRow = ({track}: TrackRowProps) => {
+    const {t} = useTranslation();
+    const {updateTrack, toggleTrackExpand, removeTrack} = useSequencer();
+    const {presets} = usePreset();
+    const {openModal, closeModal} = useModal();
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
+        };
+
+        if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
+
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isMenuOpen]);
+
+    const selectedPreset = presets.find(p => p.id === track.presetId);
+    const presetLabel = selectedPreset
+        ? t(`instruments.${selectedPreset.id}`, t(`waves.${selectedPreset.id}`, selectedPreset.name))
+        : t('common.select_inst_preset');
+
+    const handleSelectPreset = (presetId: string | null) => {
+        updateTrack(track.id, {presetId});
+        setIsMenuOpen(false);
+    };
+
+    // FIX: Funzione per l'eliminazione sicura tramite Modal
+    const handleDeleteClick = () => {
+        openModal({
+            title: t('modals.delete_track.title'),
+            size: 'sm',
+            content: <p>{t('modals.delete_track.description')}</p>,
+            footer: (
+                <>
+                    <Button color="cyan" variant="default" onClick={closeModal}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button color="red" variant="active" onClick={() => {
+                        removeTrack(track.id);
+                        closeModal();
+                    }}>
+                        {t('common.delete')}
+                    </Button>
+                </>
+            )
+        });
+    };
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.mainRow}>
+                <div className={styles.headerSpacer}>
+                    <div className={styles.header}>
+                        <button
+                            className={styles.muteSoloBtn}
+                            style={{border: 'none', background: 'transparent'}}
+                            onClick={() => toggleTrackExpand(track.id)}
+                        >
+                            {track.isExpanded ? <MdKeyboardArrowDown size={20}/> : <MdKeyboardArrowRight size={20}/>}
+                        </button>
+
+                        <div className={styles.trackInfo}>
+                            <input
+                                className={styles.trackName}
+                                value={track.name}
+                                onChange={(e) => updateTrack(track.id, {name: e.target.value})}
+                            />
+
+                            <div className={styles.presetSelector} ref={menuRef}>
+                                <div
+                                    className={clsx(styles.presetSelectorButton, isMenuOpen && styles.isOpen)}
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                >
+                                    <MdMusicNote size={14}/>
+                                    <span className={styles.presetLabel}>{presetLabel}</span>
+                                    <MdKeyboardArrowDown size={14}/>
+                                </div>
+
+                                {isMenuOpen && (
+                                    <div className={styles.presetMenu}>
+                                        <div
+                                            className={clsx(styles.presetMenuItem, !track.presetId && styles.activeItem)}
+                                            onClick={() => handleSelectPreset(null)}
+                                        >
+                                            {t('common.select_preset', 'Select Instrument...')}
+                                        </div>
+
+                                        {presets.map(p => (
+                                            <div
+                                                key={p.id}
+                                                className={clsx(styles.presetMenuItem, track.presetId === p.id && styles.activeItem)}
+                                                onClick={() => handleSelectPreset(p.id)}
+                                            >
+                                                {t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className={styles.controls}>
+                            <button
+                                className={clsx(styles.muteSoloBtn, track.isMuted && styles.muteActive)}
+                                onClick={() => updateTrack(track.id, {isMuted: !track.isMuted})}
+                            >M
+                            </button>
+                            <button
+                                className={clsx(styles.muteSoloBtn, track.isSolo && styles.soloActive)}
+                                onClick={() => updateTrack(track.id, {isSolo: !track.isSolo})}
+                            >S
+                            </button>
+                            <button
+                                className={styles.deleteBtn}
+                                onClick={handleDeleteClick}
+                                title={t('common.delete')}
+                            >
+                                <MdDelete/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    className={styles.timelinePreview}
+                    onClick={() => toggleTrackExpand(track.id)}
+                >
+                </div>
+            </div>
+
+            {track.isExpanded && (
+                <div className={styles.accordionArea}>
+                    <PianoRoll track={track}/>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default TrackRow;

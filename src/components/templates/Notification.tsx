@@ -2,7 +2,7 @@ import styles from './Notification.module.css';
 import {useEffect, useMemo, useState} from 'react';
 import clsx from 'clsx';
 import {MdCheckCircle, MdClose, MdError, MdInfo, MdWarning} from 'react-icons/md';
-import type {NotificationConfig} from "../../pages/NotificationContext.ts";
+import type {NotificationConfig} from "../../contexts/NotificationContext.ts";
 
 type NotificationProps = {
     config: Required<NotificationConfig>;

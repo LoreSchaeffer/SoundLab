@@ -1,0 +1,51 @@
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background-primary);
+    overflow: hidden;
+}
+
+.topRulerRow {
+    display: flex;
+    height: 32px;
+    flex-shrink: 0;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    z-index: 60;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rulerHeaderSpacer {
+    width: 80px;
+    flex-shrink: 0;
+    border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    background-color: var(--background-secondary);
+    z-index: 70;
+    position: sticky;
+    left: 0;
+}
+
+.rulerScrollContext {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.tracksWrapper {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--neutral-50-hsl) / 0.2) transparent;
+}
+
+.addTrackContainer {
+    padding: 16px;
+    display: flex;
+    justify-content: flex-start;
+}

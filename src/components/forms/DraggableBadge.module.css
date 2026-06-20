@@ -63,3 +63,14 @@
     min-width: 22px;
     text-align: left;
 }
+
+.centered .contentWrapper,
+.centered .inputContainer,
+.centered .textContainer {
+    justify-content: center;
+}
+
+.centered .value,
+.centered .input {
+    text-align: center;
+}

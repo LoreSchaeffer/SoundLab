@@ -13,6 +13,7 @@ export type DraggableBadgeProps = {
     dragMultiplier?: number;
     unit?: string;
     color?: Color;
+    centered?: boolean
     className?: string;
 };
 
@@ -25,6 +26,7 @@ const DraggableBadge: React.FC<DraggableBadgeProps> = ({
                                                            dragMultiplier = 1,
                                                            unit = "",
                                                            color = "cyan",
+                                                           centered = false,
                                                            className
                                                        }) => {
     const {t} = useTranslation();
@@ -139,7 +141,7 @@ const DraggableBadge: React.FC<DraggableBadgeProps> = ({
     return (
         <span
             ref={badgeRef}
-            className={clsx(styles.badge, className)}
+            className={clsx(styles.badge, centered && styles.centered, className)}
             style={{color: `var(--${color}-400)`}}
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}

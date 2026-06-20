@@ -1,0 +1,60 @@
+:root {
+    --beat-width: 40px;
+}
+
+.container {
+    position: relative;
+    min-width: 100%;
+    background-image: linear-gradient(to right, hsl(var(--neutral-50-hsl) / 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--neutral-50-hsl) / 0.05) 1px, transparent 1px);
+    background-size: var(--beat-width) var(--key-height);
+}
+
+.noteBlock {
+    position: absolute;
+    background-color: var(--cyan-500);
+    border: 1px solid rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+    cursor: grab;
+    user-select: none;
+    box-sizing: border-box;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2), inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    transition: filter 0.1s;
+}
+
+.noteBlock:hover {
+    filter: brightness(1.2);
+    z-index: 10;
+}
+
+.noteBlock:active {
+    cursor: grabbing;
+}
+
+.resizeHandle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1));
+    border-left: 1px solid rgba(0, 0, 0, 0.001);
+    border-radius: 0 2px 2px 0;
+}
+
+.resizeHandle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--orange-500);
+    box-shadow: 0 0 8px var(--orange-500);
+    z-index: 50;
+    pointer-events: none;
+    will-change: transform;
+}

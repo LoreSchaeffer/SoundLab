@@ -5,9 +5,10 @@ import clsx from "clsx";
 
 type PageProps = PropsWithChildren & {
     showNav?: boolean;
+    usePadding?: boolean;
 }
 
-const Page = ({showNav = true, children}: PageProps) => {
+const Page = ({showNav = true, usePadding = true, children}: PageProps) => {
     const {isAudioReady, initAudio} = useAudio();
 
     useEffect(() => {
@@ -58,7 +59,7 @@ const Page = ({showNav = true, children}: PageProps) => {
     return (
         <>
             {showNav && <Navbar/>}
-            <div className={clsx('page', showNav && 'padding')}>
+            <div className={clsx('page', usePadding && 'padding')}>
                 {children}
             </div>
         </>
