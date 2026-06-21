@@ -2,9 +2,18 @@ import React, {type CSSProperties, useRef} from 'react';
 import styles from './TimelineRuler.module.css';
 import {useSequencer} from '../../contexts/SequencerContext.ts';
 import {UI} from "../../utils/sequencer.ts";
+import Cursor from "./Cursor.tsx";
 
-const TimelineRuler = () => {
-    const {totalBeats, setPlayheadBeat} = useSequencer();
+type TimelineRulerProps = {
+    ghostBeat: number | null;
+};
+
+const TimelineRuler = ({ghostBeat}: TimelineRulerProps) => {
+    const {
+        totalBeats,
+        playheadBeat,
+        setPlayheadBeat
+    } = useSequencer();
 
     const totalBars = Math.ceil(totalBeats / 4);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +57,7 @@ const TimelineRuler = () => {
         <div
             ref={containerRef}
             className={styles.container}
-            style={{width: `${totalBeats * UI.BEAT_WIDTH}px`} as CSSProperties}
+            style={{width: `calc(var(--beat-width) * ${totalBeats})`} as CSSProperties}
             onMouseDown={handleMouseDown}
             onWheel={handleWheel}
         >
@@ -56,11 +65,17 @@ const TimelineRuler = () => {
                 <div
                     key={i}
                     className={styles.barMarker}
-                    style={{left: `${i * 4 * UI.BEAT_WIDTH}px`} as CSSProperties}
+                    style={{left: `calc(var(--beat-width) * ${i * 4})`} as CSSProperties}
                 >
                     <span className={styles.barNumber}>{i + 1}</span>
                 </div>
             ))}
+
+            <Cursor beat={playheadBeat} variant="ruler"/>
+
+            {ghostBeat !== null && (
+                <Cursor beat={ghostBeat} isGhost variant="ruler"/>
+            )}
         </div>
     );
 };

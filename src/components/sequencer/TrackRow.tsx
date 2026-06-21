@@ -8,7 +8,7 @@ import {usePreset} from "../../contexts/PresetContext.ts";
 import {useTranslation} from "react-i18next";
 import Button from "../elements/Button.tsx";
 import {useModal} from "../../contexts/ModalContext.ts";
-import {PIANO_ROLL_KEYS, UI} from "../../utils/sequencer.ts";
+import {PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
 import Slider from "../forms/Slider.tsx";
 
 type TrackRowProps = {
@@ -83,11 +83,7 @@ const TrackRow = ({track}: TrackRowProps) => {
                         <div className={styles.headerTop}>
                             <div className={styles.trackInfo}>
                                 <button
-                                    className={styles.muteSoloBtn}
-                                    style={{
-                                        border: 'none',
-                                        background: 'transparent'
-                                    } as React.CSSProperties}
+                                    className={styles.expandBtn}
                                     onClick={() => toggleTrackExpand(track.id)}
                                 >
                                     {track.isExpanded ? <MdKeyboardArrowDown size={18}/> : <MdKeyboardArrowRight size={18}/>}
@@ -122,21 +118,19 @@ const TrackRow = ({track}: TrackRowProps) => {
                         </div>
 
                         <div className={styles.headerBottom}>
-                            <div className={styles.presetSelector} ref={menuRef}>
+                            <div
+                                className={styles.presetSelector}
+                                ref={menuRef}
+                            >
                                 <div
                                     className={clsx(styles.presetSelectorButton, isMenuOpen && styles.isOpen)}
                                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                                 >
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '4px',
-                                            minWidth: 0
-                                        } as React.CSSProperties}
-                                    >
+                                    <div className={styles.presetLabelWrapper}>
                                         <MdMusicNote size={14}/>
-                                        <span className={styles.presetLabel}>{presetLabel}</span>
+                                        <span className={styles.presetLabel}>
+                                            {presetLabel}
+                                        </span>
                                     </div>
                                     <MdKeyboardArrowDown size={14}/>
                                 </div>
@@ -181,8 +175,8 @@ const TrackRow = ({track}: TrackRowProps) => {
                     className={styles.timelinePreview}
                     onClick={() => toggleTrackExpand(track.id)}
                     style={{
-                        width: `${totalBeats * UI.BEAT_WIDTH}px`,
-                        minWidth: `${totalBeats * UI.BEAT_WIDTH}px`
+                        width: `calc(var(--beat-width) * ${totalBeats})`,
+                        minWidth: `calc(var(--beat-width) * ${totalBeats})`
                     } as React.CSSProperties}
                 >
                     {track.notes.map(note => {
@@ -194,9 +188,9 @@ const TrackRow = ({track}: TrackRowProps) => {
                                 key={`preview-${note.id}`}
                                 className={styles.previewNote}
                                 style={{
-                                    left: `${note.startBeat * UI.BEAT_WIDTH}px`,
-                                    width: `${note.durationBeats * UI.BEAT_WIDTH}px`,
-                                    top: `${(keyIndex / PIANO_ROLL_KEYS.length) * 100}%`
+                                    left: `calc(var(--beat-width) * ${note.startBeat})`,
+                                    width: `calc(var(--beat-width) * ${note.durationBeats})`,
+                                    top: `calc(${keyIndex} / ${PIANO_ROLL_KEYS.length} * 100%)`
                                 } as React.CSSProperties}
                             />
                         );

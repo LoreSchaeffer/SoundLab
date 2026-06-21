@@ -28,7 +28,7 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const [tracks, setTracks] = useState<Track[]>(initialState?.tracks || [createDefaultTrack()]);
 
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [isLooping, setIsLooping] = useState<boolean>(false);
+    const [isLooping, setIsLooping] = useState<boolean>(true);
     const [playheadBeat, setPlayheadBeat] = useState<number>(0);
 
     const [clipboard, setClipboard] = useState<Omit<NoteEvent, 'id'>[]>([]);

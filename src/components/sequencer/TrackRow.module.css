@@ -17,7 +17,7 @@
 }
 
 .headerSpacer {
-    width: 260px;
+    width: var(--track-header-width);
     flex-shrink: 0;
     position: sticky;
     left: 0;
@@ -25,7 +25,7 @@
 }
 
 .header {
-    width: 260px;
+    width: var(--track-header-width);
     height: 100%;
     background-color: var(--background-secondary);
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
@@ -125,6 +125,22 @@
 
 .trackName:focus {
     border-bottom: 1px solid var(--cyan-500);
+}
+
+.expandBtn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.expandBtn:hover {
+    color: var(--text-primary);
 }
 
 .presetSelector {

@@ -1,26 +1,29 @@
 import {type CSSProperties} from 'react';
 import styles from './Cursor.module.css';
 import clsx from 'clsx';
-import {UI} from '../../utils/sequencer.ts';
 
 type CursorProps = {
     beat: number;
     isGhost?: boolean;
+    variant?: 'ruler' | 'track';
 };
 
-const Cursor = ({
-                    beat,
-                    isGhost = false
-                }: CursorProps) => {
+const Cursor = ({beat, isGhost = false, variant = 'track'}: CursorProps) => {
 
     return (
         <div
-            className={clsx(styles.cursorWrapper, isGhost ? styles.ghost : styles.playhead)}
+            className={clsx(
+                styles.cursorWrapper,
+                isGhost ? styles.ghost : styles.playhead,
+                variant === 'ruler' ? styles.rulerVariant : styles.trackVariant
+            )}
             style={{
-                transform: `translateX(${beat * UI.BEAT_WIDTH}px)`
+                transform: `translateX(calc(var(--beat-width) * ${beat}))`
             } as CSSProperties}
         >
-            {!isGhost && <div className={styles.playheadTriangle}/>}
+            {variant === 'ruler' && (
+                <div className={isGhost ? styles.ghostTriangle : styles.playheadTriangle}/>
+            )}
         </div>
     );
 };

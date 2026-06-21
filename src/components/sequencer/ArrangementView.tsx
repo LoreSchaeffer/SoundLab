@@ -13,68 +13,39 @@ const ArrangementView = () => {
     const {t} = useTranslation();
     const {tracks, addTrack, playheadBeat} = useSequencer();
 
-    const containerRef = useRef<HTMLDivElement>(null);
     const tracksWrapperRef = useRef<HTMLDivElement>(null);
     const rulerScrollRef = useRef<HTMLDivElement>(null);
-    const cursorScrollRef = useRef<HTMLDivElement>(null);
 
     const [ghostBeat, setGhostBeat] = useState<number | null>(null);
 
     const handleTracksScroll = (e: React.UIEvent<HTMLDivElement>) => {
-        const scrollLeft = e.currentTarget.scrollLeft;
-
-        if (rulerScrollRef.current) rulerScrollRef.current.scrollLeft = scrollLeft;
-        if (cursorScrollRef.current) cursorScrollRef.current.scrollLeft = scrollLeft;
-    };
-
-    const handleGlobalMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!containerRef.current || !tracksWrapperRef.current) return;
-
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-
-        if (x >= UI.TRACK_HEADER_WIDTH) {
-            const scrollLeft = tracksWrapperRef.current.scrollLeft;
-            const gridX = x - UI.TRACK_HEADER_WIDTH + scrollLeft;
-            const beat = Math.floor(gridX / UI.BEAT_WIDTH);
-
-            if (beat !== ghostBeat) setGhostBeat(beat);
-        } else {
-            if (ghostBeat !== null) setGhostBeat(null);
-        }
-    };
-
-    const handleGlobalMouseLeave = () => {
-        if (ghostBeat !== null) setGhostBeat(null);
+        if (rulerScrollRef.current) rulerScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
     };
 
     const layoutVars = {
         '--beat-width': `${UI.BEAT_WIDTH}px`,
         '--key-height': `${UI.KEY_HEIGHT}px`,
-        '--header-width': `${UI.TRACK_HEADER_WIDTH}px`,
-        '--piano-width': `${UI.PIANO_SIDEBAR_WIDTH}px`,
+        '--track-header-width': `${UI.TRACK_HEADER_WIDTH}px`,
+        '--piano-sidebar-width': `${UI.PIANO_SIDEBAR_WIDTH}px`,
         '--ruler-height': `${UI.TOP_RULER_HEIGHT}px`
     } as CSSProperties;
 
     return (
-        <div
-            ref={containerRef}
-            className={styles.container}
-            style={layoutVars}
-            onMouseMove={handleGlobalMouseMove}
-            onMouseLeave={handleGlobalMouseLeave}
-        >
-            <div className={styles.globalCursorsLayer}>
-                <div ref={cursorScrollRef} className={styles.cursorScrollSync}>
-                    <Cursor beat={playheadBeat}/>
-                    {ghostBeat !== null && <Cursor beat={ghostBeat} isGhost/>}
-                </div>
-            </div>
-
+        <div className={styles.container} style={layoutVars}>
             <div className={styles.topRulerRow}>
                 <div className={styles.rulerHeaderSpacer}/>
-                <div className={styles.rulerScrollContext} ref={rulerScrollRef}>
-                    <TimelineRuler/>
+
+                <div
+                    className={styles.rulerScrollContext}
+                    ref={rulerScrollRef}
+                    onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left + e.currentTarget.scrollLeft;
+                        setGhostBeat(x / UI.BEAT_WIDTH);
+                    }}
+                    onMouseLeave={() => setGhostBeat(null)}
+                >
+                    <TimelineRuler ghostBeat={ghostBeat}/>
                 </div>
             </div>
 
@@ -83,19 +54,42 @@ const ArrangementView = () => {
                 ref={tracksWrapperRef}
                 onScroll={handleTracksScroll}
             >
-                {tracks.map(track => (
-                    <TrackRow key={track.id} track={track}/>
-                ))}
+                <div className={styles.tracksContent}>
+                    <div
+                        className={styles.tracksList}
+                        onMouseMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
 
-                <div className={styles.addTrackContainer}>
-                    <Button
-                        variant="default"
-                        color="cyan"
-                        icon={<MdAdd/>}
-                        onClick={addTrack}
+                            if (x >= UI.TRACK_HEADER_WIDTH) {
+                                const gridX = x - UI.TRACK_HEADER_WIDTH;
+                                setGhostBeat(Math.floor(gridX / UI.BEAT_WIDTH));
+                            } else {
+                                setGhostBeat(null);
+                            }
+                        }}
+                        onMouseLeave={() => setGhostBeat(null)}
                     >
-                        {t('sequencer.add_track')}
-                    </Button>
+                        <Cursor beat={playheadBeat} variant="track"/>
+
+                        {ghostBeat !== null && <Cursor beat={ghostBeat} isGhost variant="track"/>}
+
+                        {tracks.map(track => (
+                            <TrackRow key={track.id} track={track}/>
+                        ))}
+                    </div>
+
+                    <div className={styles.addTrackContainer}>
+                        <Button
+                            variant="default"
+                            color="cyan"
+                            icon={<MdAdd/>}
+                            onClick={addTrack}
+                        >
+                            {t('sequencer.add_track')}
+                        </Button>
+                    </div>
+
                 </div>
             </div>
         </div>
