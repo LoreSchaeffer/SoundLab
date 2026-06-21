@@ -21,7 +21,9 @@ const ArrangementView = () => {
                 </div>
             </div>
 
-            <div className={styles.tracksWrapper}>
+            <div
+                className={styles.tracksWrapper}
+            >
                 {tracks.map(track => (
                     <TrackRow key={track.id} track={track}/>
                 ))}

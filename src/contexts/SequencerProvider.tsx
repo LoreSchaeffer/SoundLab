@@ -31,6 +31,8 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const [isLooping, setIsLooping] = useState<boolean>(false);
     const [playheadBeat, setPlayheadBeat] = useState<number>(0);
 
+    const [clipboard, setClipboard] = useState<Omit<NoteEvent, 'id'>[]>([]);
+
     useEffect(() => {
         localStorage.setItem('daw_project', JSON.stringify({bpm, tracks, masterVolume}));
     }, [bpm, tracks, masterVolume]);
@@ -95,6 +97,17 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
         }));
     }, []);
 
+    const addNotes = useCallback((trackId: string, newNotes: Omit<NoteEvent, 'id'>[]) => {
+        setTracks(prev => prev.map(t => {
+            if (t.id !== trackId) return t;
+            const notesWithIds = newNotes.map(n => ({...n, id: crypto.randomUUID()}));
+            return {
+                ...t,
+                notes: [...t.notes, ...notesWithIds]
+            };
+        }));
+    }, []);
+
     const updateNote = useCallback((trackId: string, noteId: string, updates: Partial<NoteEvent>) => {
         setTracks(prev => prev.map(t => {
             if (t.id !== trackId) return t;
@@ -132,6 +145,9 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
             setPlayheadBeat,
             totalBeats,
 
+            clipboard,
+            setClipboard,
+
             tracks,
             addTrack,
             removeTrack,
@@ -139,6 +155,7 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
             toggleTrackExpand,
 
             addNote,
+            addNotes,
             updateNote,
             removeNote,
 

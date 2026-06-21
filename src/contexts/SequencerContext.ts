@@ -36,6 +36,9 @@ type SequencerContextType = {
     setPlayheadBeat: Dispatch<SetStateAction<number>>;
     totalBeats: number; // Project length
 
+    clipboard: Omit<NoteEvent, 'id'>[];
+    setClipboard: Dispatch<SetStateAction<Omit<NoteEvent, 'id'>[]>>;
+
     // Tracks state
     tracks: Track[];
     addTrack: () => void;
@@ -45,6 +48,7 @@ type SequencerContextType = {
 
     // Notes management
     addNote: (trackId: string, note: Omit<NoteEvent, 'id'>) => void;
+    addNotes: (trackId: string, notes: Omit<NoteEvent, 'id'>[]) => void;
     updateNote: (trackId: string, noteId: string, updates: Partial<NoteEvent>) => void;
     removeNote: (trackId: string, noteId: string) => void;
 
