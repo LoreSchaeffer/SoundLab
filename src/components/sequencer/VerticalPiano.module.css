@@ -1,9 +1,5 @@
-:root {
-    --key-height: 24px;
-}
-
 .container {
-    width: 80px;
+    width: var(--piano-sidebar-width);
     background-color: #0f172a;
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
     display: flex;

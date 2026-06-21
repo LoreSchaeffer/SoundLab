@@ -1,7 +1,3 @@
-:root {
-    --beat-width: 40px;
-}
-
 .container {
     position: relative;
     min-width: 100%;
@@ -49,18 +45,6 @@
 
 .resizeHandle:hover {
     background: rgba(255, 255, 255, 0.3);
-}
-
-.playhead {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: var(--orange-500);
-    box-shadow: 0 0 8px var(--orange-500);
-    z-index: 50;
-    pointer-events: none;
-    will-change: transform;
 }
 
 .hoveredRow {

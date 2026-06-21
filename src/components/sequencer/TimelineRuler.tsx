@@ -1,10 +1,11 @@
-import React, {useRef} from 'react';
+import React, {type CSSProperties, useRef} from 'react';
 import styles from './TimelineRuler.module.css';
 import {useSequencer} from '../../contexts/SequencerContext.ts';
-import {BEAT_WIDTH} from "../../utils/sequencer.ts";
+import {UI} from "../../utils/sequencer.ts";
 
 const TimelineRuler = () => {
-    const {totalBeats, playheadBeat, setPlayheadBeat} = useSequencer();
+    const {totalBeats, setPlayheadBeat} = useSequencer();
+
     const totalBars = Math.ceil(totalBeats / 4);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -13,7 +14,7 @@ const TimelineRuler = () => {
         const rect = containerRef.current.getBoundingClientRect();
         const x = clientX - rect.left;
 
-        const beat = Math.max(0, Math.min(totalBeats, x / BEAT_WIDTH));
+        const beat = Math.max(0, Math.min(totalBeats, x / UI.BEAT_WIDTH));
         setPlayheadBeat(beat);
     };
 
@@ -47,22 +48,19 @@ const TimelineRuler = () => {
         <div
             ref={containerRef}
             className={styles.container}
-            style={{
-                width: `${totalBeats * BEAT_WIDTH}px`,
-                '--beat-width': `${BEAT_WIDTH}px`
-            } as React.CSSProperties}
+            style={{width: `${totalBeats * UI.BEAT_WIDTH}px`} as CSSProperties}
             onMouseDown={handleMouseDown}
             onWheel={handleWheel}
         >
             {Array.from({length: totalBars}).map((_, i) => (
-                <div key={i} className={styles.barMarker} style={{left: `${i * 4 * BEAT_WIDTH}px`}}>
+                <div
+                    key={i}
+                    className={styles.barMarker}
+                    style={{left: `${i * 4 * UI.BEAT_WIDTH}px`} as CSSProperties}
+                >
                     <span className={styles.barNumber}>{i + 1}</span>
                 </div>
             ))}
-
-            <div className={styles.playheadMarker} style={{transform: `translateX(${playheadBeat * BEAT_WIDTH}px)`}}>
-                <div className={styles.playheadTriangle}/>
-            </div>
         </div>
     );
 };

@@ -26,24 +26,3 @@
     font-weight: 700;
     font-family: var(--main-font);
 }
-
-.playheadMarker {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    z-index: 50;
-    pointer-events: none;
-    will-change: transform;
-}
-
-.playheadTriangle {
-    position: absolute;
-    bottom: 0;
-    left: -8px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 10px solid var(--orange-500);
-}

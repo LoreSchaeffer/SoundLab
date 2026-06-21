@@ -3,7 +3,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import VerticalPiano from './VerticalPiano.tsx';
 import NoteGrid from './NoteGrid.tsx';
 import type {Track} from "../../contexts/SequencerContext.ts";
-import {BEAT_WIDTH, KEY_HEIGHT, PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
+import {PIANO_ROLL_KEYS, UI} from "../../utils/sequencer.ts";
 import {useSynth} from "../../contexts/SynthContext.ts";
 
 type PianoRollProps = {
@@ -15,6 +15,7 @@ const PianoRoll = ({track}: PianoRollProps) => {
     const gridRef = useRef<HTMLDivElement>(null);
 
     const {playNote, releaseNote} = useSynth();
+
     const [previewNotes, setPreviewNotes] = useState<Set<string>>(new Set());
     const [hoveredNote, setHoveredNote] = useState<string | null>(null);
 
@@ -23,7 +24,8 @@ const PianoRoll = ({track}: PianoRollProps) => {
             const c4Index = PIANO_ROLL_KEYS.findIndex(k => k.note === 'C4');
             if (c4Index !== -1) {
                 const clientHeight = gridRef.current.clientHeight;
-                const scrollPos = (c4Index * KEY_HEIGHT) - clientHeight + (KEY_HEIGHT * 2);
+                const scrollPos = (c4Index * UI.KEY_HEIGHT) - clientHeight + (UI.KEY_HEIGHT * 2);
+
                 gridRef.current.scrollTop = scrollPos;
                 pianoRef.current.scrollTop = scrollPos;
             }
@@ -54,18 +56,13 @@ const PianoRoll = ({track}: PianoRollProps) => {
     const handleGridScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (pianoRef.current) pianoRef.current.scrollTop = e.currentTarget.scrollTop;
     };
+
     const handlePianoScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (gridRef.current) gridRef.current.scrollTop = e.currentTarget.scrollTop;
     };
 
     return (
-        <div
-            className={styles.container}
-            style={{
-                '--beat-width': `${BEAT_WIDTH}px`,
-                '--key-height': `${KEY_HEIGHT}px`
-            } as React.CSSProperties}
-        >
+        <div className={styles.container}>
             <div className={styles.pianoSidebar}>
                 <div className={styles.pianoSpacer}/>
                 <VerticalPiano

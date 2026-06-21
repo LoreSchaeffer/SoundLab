@@ -4,28 +4,23 @@
     flex-direction: column;
     background-color: var(--background-primary);
     overflow: hidden;
+    position: relative;
 }
 
 .topRulerRow {
     display: flex;
-    height: 32px;
+    height: var(--ruler-height);
     flex-shrink: 0;
     background-color: var(--background-secondary);
     border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
     z-index: 60;
-    position: sticky;
-    top: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .rulerHeaderSpacer {
-    width: 80px;
+    width: var(--header-width);
     flex-shrink: 0;
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
     background-color: var(--background-secondary);
-    z-index: 70;
-    position: sticky;
-    left: 0;
 }
 
 .rulerScrollContext {
@@ -47,5 +42,21 @@
 .addTrackContainer {
     padding: 16px;
     display: flex;
-    justify-content: flex-start;
+}
+
+.globalCursorsLayer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--header-width);
+    right: 0;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.cursorScrollSync {
+    position: relative;
+    width: 100%;
+    height: 100%;
 }

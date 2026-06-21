@@ -1,0 +1,31 @@
+.cursorWrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--beat-width);
+    pointer-events: none;
+    will-change: transform;
+}
+
+.playhead {
+    border-left: 2px solid var(--orange-500);
+    box-shadow: 0 0 8px var(--orange-500);
+    z-index: 50;
+}
+
+.playheadTriangle {
+    position: absolute;
+    top: 22px;
+    left: -6px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 10px solid var(--orange-500);
+}
+
+.ghost {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left: 1px dashed rgba(255, 255, 255, 0.3);
+    z-index: 40;
+}

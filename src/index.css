@@ -310,6 +310,13 @@
     --padding: 10px;
 
     --track-row-header-width: 260px;
+
+    /* SEQUENCER */
+    --beat-width: 30px;
+    --key-height: 16px;
+    --track-header-width: 260px;
+    --piano-sidebar-width: 80px;
+    --ruler-height: 32px;
 }
 
 * {

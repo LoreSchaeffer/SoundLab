@@ -1,10 +1,15 @@
 import {noteNames} from '../types';
 
-export const BEAT_WIDTH = 30;
-export const KEY_HEIGHT = 18;
+export const UI = {
+    BEAT_WIDTH: 30,
+    KEY_HEIGHT: 16,
+    TRACK_HEADER_WIDTH: 260,
+    PIANO_SIDEBAR_WIDTH: 80,
+    TOP_RULER_HEIGHT: 32
+};
 
-export const PIANO_ROLL_START_NOTE = 'C3';
-export const PIANO_ROLL_END_NOTE = 'C6';
+export const PIANO_ROLL_START_NOTE = 'C2';
+export const PIANO_ROLL_END_NOTE = 'C7';
 
 export type NoteDef = {
     note: string;
@@ -36,4 +41,4 @@ export const generateKeys = (start: string, end: string): NoteDef[] => {
 };
 
 export const PIANO_ROLL_KEYS = generateKeys(PIANO_ROLL_START_NOTE, PIANO_ROLL_END_NOTE).reverse();
-export const PIANO_ROLL_HEIGHT = PIANO_ROLL_KEYS.length * KEY_HEIGHT;
+export const PIANO_ROLL_HEIGHT = PIANO_ROLL_KEYS.length * UI.KEY_HEIGHT;

@@ -1,5 +1,5 @@
 import styles from './TrackRow.module.css';
-import {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import clsx from 'clsx';
 import {MdDelete, MdKeyboardArrowDown, MdKeyboardArrowRight, MdMusicNote} from 'react-icons/md';
 import {type Track, useSequencer} from "../../contexts/SequencerContext.ts";
@@ -8,7 +8,7 @@ import {usePreset} from "../../contexts/PresetContext.ts";
 import {useTranslation} from "react-i18next";
 import Button from "../elements/Button.tsx";
 import {useModal} from "../../contexts/ModalContext.ts";
-import {BEAT_WIDTH, PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
+import {PIANO_ROLL_KEYS, UI} from "../../utils/sequencer.ts";
 import Slider from "../forms/Slider.tsx";
 
 type TrackRowProps = {
@@ -18,6 +18,7 @@ type TrackRowProps = {
 const TrackRow = ({track}: TrackRowProps) => {
     const {t} = useTranslation();
     const {updateTrack, toggleTrackExpand, removeTrack, totalBeats} = useSequencer();
+
     const {presets} = usePreset();
     const {openModal, closeModal} = useModal();
 
@@ -26,11 +27,12 @@ const TrackRow = ({track}: TrackRowProps) => {
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
         };
 
         if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
-
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isMenuOpen]);
 
@@ -51,13 +53,21 @@ const TrackRow = ({track}: TrackRowProps) => {
             content: <p>{t('modals.delete_track.description')}</p>,
             footer: (
                 <>
-                    <Button color="cyan" variant="default" onClick={closeModal}>
+                    <Button
+                        color="cyan"
+                        variant="default"
+                        onClick={closeModal}
+                    >
                         {t('common.cancel')}
                     </Button>
-                    <Button color="red" variant="active" onClick={() => {
-                        removeTrack(track.id);
-                        closeModal();
-                    }}>
+                    <Button
+                        color="red"
+                        variant="active"
+                        onClick={() => {
+                            removeTrack(track.id);
+                            closeModal();
+                        }}
+                    >
                         {t('common.delete')}
                     </Button>
                 </>
@@ -74,7 +84,10 @@ const TrackRow = ({track}: TrackRowProps) => {
                             <div className={styles.trackInfo}>
                                 <button
                                     className={styles.muteSoloBtn}
-                                    style={{border: 'none', background: 'transparent'}}
+                                    style={{
+                                        border: 'none',
+                                        background: 'transparent'
+                                    } as React.CSSProperties}
                                     onClick={() => toggleTrackExpand(track.id)}
                                 >
                                     {track.isExpanded ? <MdKeyboardArrowDown size={18}/> : <MdKeyboardArrowRight size={18}/>}
@@ -86,45 +99,68 @@ const TrackRow = ({track}: TrackRowProps) => {
                                 />
                             </div>
                             <div className={styles.controls}>
-                                <button className={clsx(styles.muteSoloBtn, track.isMuted && styles.muteActive)} onClick={() => updateTrack(track.id, {isMuted: !track.isMuted})}>M</button>
-                                <button className={clsx(styles.muteSoloBtn, track.isSolo && styles.soloActive)} onClick={() => updateTrack(track.id, {isSolo: !track.isSolo})}>S</button>
-                                <button className={styles.deleteBtn} onClick={handleDeleteClick} title={t('common.delete')}><MdDelete size={16}/></button>
+                                <button
+                                    className={clsx(styles.muteSoloBtn, track.isMuted && styles.muteActive)}
+                                    onClick={() => updateTrack(track.id, {isMuted: !track.isMuted})}
+                                >
+                                    M
+                                </button>
+                                <button
+                                    className={clsx(styles.muteSoloBtn, track.isSolo && styles.soloActive)}
+                                    onClick={() => updateTrack(track.id, {isSolo: !track.isSolo})}
+                                >
+                                    S
+                                </button>
+                                <button
+                                    className={styles.deleteBtn}
+                                    onClick={handleDeleteClick}
+                                    title={t('common.delete')}
+                                >
+                                    <MdDelete size={16}/>
+                                </button>
                             </div>
                         </div>
 
                         <div className={styles.headerBottom}>
                             <div className={styles.presetSelector} ref={menuRef}>
-                                <div className={styles.presetSelector} ref={menuRef}>
+                                <div
+                                    className={clsx(styles.presetSelectorButton, isMenuOpen && styles.isOpen)}
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                >
                                     <div
-                                        className={clsx(styles.presetSelectorButton, isMenuOpen && styles.isOpen)}
-                                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            minWidth: 0
+                                        } as React.CSSProperties}
                                     >
                                         <MdMusicNote size={14}/>
                                         <span className={styles.presetLabel}>{presetLabel}</span>
-                                        <MdKeyboardArrowDown size={14}/>
                                     </div>
-
-                                    {isMenuOpen && (
-                                        <div className={styles.presetMenu}>
-                                            <div
-                                                className={clsx(styles.presetMenuItem, !track.presetId && styles.activeItem)}
-                                                onClick={() => handleSelectPreset(null)}
-                                            >
-                                                {t('common.select_inst_preset')}
-                                            </div>
-
-                                            {presets.map(p => (
-                                                <div
-                                                    key={p.id}
-                                                    className={clsx(styles.presetMenuItem, track.presetId === p.id && styles.activeItem)}
-                                                    onClick={() => handleSelectPreset(p.id)}
-                                                >
-                                                    {t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name))}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <MdKeyboardArrowDown size={14}/>
                                 </div>
+
+                                {isMenuOpen && (
+                                    <div className={styles.presetMenu}>
+                                        <div
+                                            className={clsx(styles.presetMenuItem, !track.presetId && styles.activeItem)}
+                                            onClick={() => handleSelectPreset(null)}
+                                        >
+                                            {t('common.select_inst_preset')}
+                                        </div>
+
+                                        {presets.map(p => (
+                                            <div
+                                                key={p.id}
+                                                className={clsx(styles.presetMenuItem, track.presetId === p.id && styles.activeItem)}
+                                                onClick={() => handleSelectPreset(p.id)}
+                                            >
+                                                {t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className={styles.trackVolumeSlider}>
@@ -145,23 +181,23 @@ const TrackRow = ({track}: TrackRowProps) => {
                     className={styles.timelinePreview}
                     onClick={() => toggleTrackExpand(track.id)}
                     style={{
-                        width: `${totalBeats * BEAT_WIDTH}px`,
-                        minWidth: `${totalBeats * BEAT_WIDTH}px`,
-                        backgroundSize: `${BEAT_WIDTH}px 100%`
-                    }}
+                        width: `${totalBeats * UI.BEAT_WIDTH}px`,
+                        minWidth: `${totalBeats * UI.BEAT_WIDTH}px`
+                    } as React.CSSProperties}
                 >
                     {track.notes.map(note => {
                         const keyIndex = PIANO_ROLL_KEYS.findIndex(k => k.note === note.pitch);
                         if (keyIndex === -1) return null;
+
                         return (
                             <div
                                 key={`preview-${note.id}`}
                                 className={styles.previewNote}
                                 style={{
-                                    left: `${note.startBeat * BEAT_WIDTH}px`,
-                                    width: `${note.durationBeats * BEAT_WIDTH}px`,
+                                    left: `${note.startBeat * UI.BEAT_WIDTH}px`,
+                                    width: `${note.durationBeats * UI.BEAT_WIDTH}px`,
                                     top: `${(keyIndex / PIANO_ROLL_KEYS.length) * 100}%`
-                                }}
+                                } as React.CSSProperties}
                             />
                         );
                     })}

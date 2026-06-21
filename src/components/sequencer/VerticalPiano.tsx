@@ -1,7 +1,7 @@
 import styles from './VerticalPiano.module.css';
 import React, {forwardRef} from 'react';
 import clsx from 'clsx';
-import {KEY_HEIGHT, PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
+import {PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
 
 type VerticalPianoProps = {
     playingNotes?: Set<string>;
@@ -11,20 +11,19 @@ type VerticalPianoProps = {
     onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
 }
 
-const VerticalPiano = forwardRef<HTMLDivElement, VerticalPianoProps>((({
-                                                                           playingNotes = new Set(),
-                                                                           hoveredNote,
-                                                                           onNotePlay,
-                                                                           onNoteRelease,
-                                                                           onScroll
-                                                                       }, ref) => {
+const VerticalPiano = forwardRef<HTMLDivElement, VerticalPianoProps>(({
+                                                                          playingNotes = new Set(),
+                                                                          hoveredNote,
+                                                                          onNotePlay,
+                                                                          onNoteRelease,
+                                                                          onScroll
+                                                                      }, ref) => {
 
     return (
         <div
             className={styles.container}
             ref={ref}
             onScroll={onScroll}
-            style={{'--key-height': `${KEY_HEIGHT}px`} as React.CSSProperties}
         >
             {PIANO_ROLL_KEYS.map(({note, type}) => {
                 const isActive = playingNotes.has(note);
@@ -49,6 +48,6 @@ const VerticalPiano = forwardRef<HTMLDivElement, VerticalPianoProps>((({
             })}
         </div>
     );
-}));
+});
 
 export default VerticalPiano;
