@@ -158,6 +158,7 @@
     "add_track": "Aggiungi Traccia",
     "grid": "Griglia",
     "pointer": "Puntatore",
-    "cut": "Taglio"
+    "cut": "Taglio",
+    "step_rec": "Registrazione a Passi"
   }
 }

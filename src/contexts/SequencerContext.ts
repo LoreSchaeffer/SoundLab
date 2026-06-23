@@ -44,6 +44,12 @@ type SequencerContextType = {
     activeTool: ToolType;
     setActiveTool: Dispatch<SetStateAction<ToolType>>;
 
+    selectedTrackId: string | null;
+    setSelectedTrackId: Dispatch<SetStateAction<string | null>>;
+
+    isStepRecording: boolean;
+    setIsStepRecording: Dispatch<SetStateAction<boolean>>;
+
     clipboard: Omit<NoteEvent, 'id'>[];
     setClipboard: Dispatch<SetStateAction<Omit<NoteEvent, 'id'>[]>>;
 

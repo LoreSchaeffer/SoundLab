@@ -1,5 +1,5 @@
 import styles from './TransportBar.module.css';
-import {MdContentCut, MdDeleteSweep, MdFileDownload, MdFileUpload, MdMouse, MdPause, MdPlayArrow, MdRepeat, MdSettingsInputComponent, MdStop, MdVolumeUp} from 'react-icons/md';
+import {MdContentCut, MdDeleteSweep, MdFiberManualRecord, MdFileDownload, MdFileUpload, MdMouse, MdPause, MdPlayArrow, MdRepeat, MdSettingsInputComponent, MdStop, MdVolumeUp} from 'react-icons/md';
 import Button from '../elements/Button.tsx';
 import {useSequencer} from "../../contexts/SequencerContext.ts";
 import {useTranslation} from "react-i18next";
@@ -17,23 +17,16 @@ import type {MidiParsedMessage} from "../../utils/midi.ts";
 const TransportBar = () => {
     const {t} = useTranslation();
     const {
-        isPlaying,
-        togglePlay,
-        bpm,
-        setBpm,
-        playheadBeat,
-        setPlayheadBeat,
-        isLooping,
-        toggleLoop,
+        isPlaying, togglePlay,
+        bpm, setBpm,
+        playheadBeat, setPlayheadBeat,
+        isLooping, toggleLoop,
         tracks,
-        clearProject,
-        loadProject,
-        masterVolume,
-        setMasterVolume,
-        snapResolution,
-        setSnapResolution,
-        activeTool,
-        setActiveTool
+        clearProject, loadProject,
+        masterVolume, setMasterVolume,
+        snapResolution, setSnapResolution,
+        activeTool, setActiveTool,
+        isStepRecording, setIsStepRecording
     } = useSequencer();
     const {openModal, closeModal} = useModal();
     const {addNotification} = useNotification();
@@ -149,13 +142,15 @@ const TransportBar = () => {
                     case ccMappings['split']:
                         setActiveTool('split');
                         break;
+                    case ccMappings['step_rec']:
+                        setIsStepRecording(p => !p)
                 }
             }
         };
 
         addMidiListener(handleMidiAction);
         return () => removeMidiListener(handleMidiAction);
-    }, [addMidiListener, removeMidiListener, ccMappings, togglePlay, handleStop, toggleLoop, setActiveTool]);
+    }, [addMidiListener, removeMidiListener, ccMappings, togglePlay, handleStop, toggleLoop, setActiveTool, setIsStepRecording]);
 
     const gridOptions = [
         {value: '1', label: '1/4'},
@@ -167,6 +162,14 @@ const TransportBar = () => {
     return (
         <div className={styles.container}>
             <div className={styles.controls}>
+                <Button
+                    variant={isStepRecording ? 'active' : 'default'}
+                    color="red"
+                    onClick={() => setIsStepRecording(p => !p)}
+                    onContextMenu={handleMidiLearn('step_rec', t('sequencer.step_recording', 'Step Rec'))}
+                    icon={<MdFiberManualRecord/>}
+                    title={t('sequencer.step_rec') + ' (R)'}
+                />
                 <Button
                     variant={isPlaying ? 'active' : 'default'}
                     color="green"

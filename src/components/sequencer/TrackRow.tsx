@@ -22,7 +22,7 @@ type TrackRowProps = {
 
 const TrackRow = ({track}: TrackRowProps) => {
     const {t} = useTranslation();
-    const {updateTrack, toggleTrackExpand, removeTrack, totalBeats} = useSequencer();
+    const {updateTrack, toggleTrackExpand, removeTrack, totalBeats, selectedTrackId, setSelectedTrackId} = useSequencer();
     const {presets, deleteUserPreset} = usePreset();
     const {addNotification} = useNotification();
     const {openModal, closeModal} = useModal();
@@ -148,12 +148,18 @@ const TrackRow = ({track}: TrackRowProps) => {
         <div className={styles.container}>
             <div className={styles.mainRow}>
                 <div className={styles.headerSpacer}>
-                    <div className={styles.header}>
+                    <div
+                        className={clsx(styles.header, selectedTrackId === track.id && styles.selected)}
+                        onClick={() => setSelectedTrackId(track.id)}
+                    >
                         <div className={styles.headerTop}>
                             <div className={styles.trackInfo}>
                                 <button
                                     className={styles.expandBtn}
-                                    onClick={() => toggleTrackExpand(track.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleTrackExpand(track.id);
+                                    }}
                                 >
                                     {track.isExpanded ? <MdKeyboardArrowDown size={18}/> : <MdKeyboardArrowRight size={18}/>}
                                 </button>

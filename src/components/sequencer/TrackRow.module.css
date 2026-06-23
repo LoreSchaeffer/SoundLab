@@ -30,12 +30,18 @@
     background-color: var(--background-secondary);
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
     border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    border-left: 3px solid transparent;
     padding: 6px 12px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 6px;
     box-sizing: border-box;
+}
+
+.header.selected {
+    border-left-color: var(--cyan-500);
+    background-color: color-mix(in srgb, var(--background-secondary) 80%, var(--cyan-500));
 }
 
 .headerTop,

@@ -8,15 +8,67 @@ import React, {type CSSProperties, useEffect, useRef, useState} from 'react';
 import {useTranslation} from "react-i18next";
 import {UI} from "../../utils/sequencer.ts";
 import Cursor from "./Cursor.tsx";
+import type {MidiParsedMessage} from "../../utils/midi.ts";
+import {useSynth} from "../../contexts/SynthContext.ts";
+import {useMidi} from "../../contexts/MidiContext.ts";
 
 const ArrangementView = () => {
     const {t} = useTranslation();
-    const {tracks, addTrack, playheadBeat, setActiveTool, togglePlay} = useSequencer();
+    const {tracks, addTrack, playheadBeat, setActiveTool, togglePlay, setIsStepRecording, isStepRecording, snapResolution, selectedTrackId, addNotes, setPlayheadBeat} = useSequencer();
+    const {addMidiListener, removeMidiListener} = useMidi();
+    const {playNote, releaseNote} = useSynth();
 
     const tracksWrapperRef = useRef<HTMLDivElement>(null);
     const rulerScrollRef = useRef<HTMLDivElement>(null);
 
     const [ghostBeat, setGhostBeat] = useState<number | null>(null);
+
+    const stateRef = useRef({selectedTrackId, isStepRecording, playheadBeat, snapResolution});
+
+    useEffect(() => {
+        stateRef.current = {selectedTrackId, isStepRecording, playheadBeat, snapResolution};
+    }, [selectedTrackId, isStepRecording, playheadBeat, snapResolution]);
+
+    const activeKeys = useRef<Set<string>>(new Set());
+    const chordBuffer = useRef<Array<{ pitch: string, velocity: number }>>([]);
+
+    useEffect(() => {
+        const handleMidi = (msg: MidiParsedMessage) => {
+            const {selectedTrackId, isStepRecording, playheadBeat, snapResolution} = stateRef.current;
+
+            if (msg.type === 'noteon' && msg.note) {
+                if (selectedTrackId) playNote(selectedTrackId, msg.note, msg.velocity || 0.8);
+
+                activeKeys.current.add(msg.note);
+                chordBuffer.current.push({pitch: msg.note, velocity: msg.velocity || 0.8});
+            } else if (msg.type === 'noteoff' && msg.note) {
+                if (selectedTrackId) releaseNote(selectedTrackId, msg.note);
+
+                activeKeys.current.delete(msg.note);
+
+                if (activeKeys.current.size === 0 && chordBuffer.current.length > 0) {
+                    if (isStepRecording && selectedTrackId) {
+                        const duration = snapResolution > 0 ? 1 / snapResolution : 0.25;
+
+                        const newNotes = chordBuffer.current.map(n => ({
+                            pitch: n.pitch,
+                            velocity: n.velocity,
+                            startBeat: playheadBeat,
+                            durationBeats: duration
+                        }));
+
+                        addNotes(selectedTrackId, newNotes);
+                        setPlayheadBeat(playheadBeat + duration);
+                    }
+
+                    chordBuffer.current = [];
+                }
+            }
+        };
+
+        addMidiListener(handleMidi);
+        return () => removeMidiListener(handleMidi);
+    }, [addMidiListener, removeMidiListener, playNote, releaseNote, addNotes, setPlayheadBeat]);
 
     useEffect(() => {
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -31,15 +83,19 @@ const ArrangementView = () => {
             if (e.key.toLowerCase() === 'v') {
                 setActiveTool('pointer');
             }
-            
+
             if (e.key.toLowerCase() === 'c') {
                 setActiveTool('split');
+            }
+
+            if (e.key.toLowerCase() === 'r') {
+                setIsStepRecording(p => !p);
             }
         };
 
         window.addEventListener('keydown', handleGlobalKeyDown);
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-    }, [togglePlay, setActiveTool]);
+    }, [togglePlay, setActiveTool, setIsStepRecording]);
 
     const handleTracksScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (rulerScrollRef.current) rulerScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;

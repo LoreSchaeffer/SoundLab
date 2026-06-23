@@ -35,6 +35,9 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const [snapResolution, setSnapResolution] = useState<number>(initialState?.snapResolution ?? 2);
     const [activeTool, setActiveTool] = useState<ToolType>('pointer');
 
+    const [selectedTrackId, setSelectedTrackId] = useState<string | null>(initialState?.tracks?.[0]?.id || null);
+    const [isStepRecording, setIsStepRecording] = useState(false);
+
     const [clipboard, setClipboard] = useState<Omit<NoteEvent, 'id'>[]>([]);
 
     const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
@@ -136,35 +139,28 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
         }));
     }, []);
 
-    const contextValue = useMemo(() => ({bpm,
-        setBpm,
-        isPlaying,
-        setIsPlaying,
-        togglePlay,
-        isLooping,
-        toggleLoop,
+    const contextValue = useMemo(() => ({
+        bpm, setBpm,
+        isPlaying, setIsPlaying, togglePlay,
+        isLooping, toggleLoop,
 
-        masterVolume,
-        setMasterVolume,
+        masterVolume, setMasterVolume,
 
-        playheadBeat,
-        setPlayheadBeat,
+        playheadBeat, setPlayheadBeat,
         totalBeats,
 
-        snapResolution,
-        setSnapResolution,
-        activeTool,
-        setActiveTool,
+        snapResolution, setSnapResolution,
+        activeTool, setActiveTool,
 
-        clipboard,
-        setClipboard,
+        selectedTrackId, setSelectedTrackId,
 
-        selectedNoteIds,
-        setSelectedNoteIds,
-        scaleRoot,
-        setScaleRoot,
-        scaleType,
-        setScaleType,
+        isStepRecording, setIsStepRecording,
+
+        clipboard, setClipboard,
+
+        selectedNoteIds, setSelectedNoteIds,
+        scaleRoot, setScaleRoot,
+        scaleType, setScaleType,
 
         tracks,
         addTrack,
@@ -178,36 +174,29 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
         removeNote,
 
         clearProject,
-        loadProject}), [
-        bpm,
-        setBpm,
-        isPlaying,
-        setIsPlaying,
-        togglePlay,
-        isLooping,
-        toggleLoop,
+        loadProject
+    }), [
+        bpm, setBpm,
+        isPlaying, setIsPlaying, togglePlay,
+        isLooping, toggleLoop,
 
-        masterVolume,
-        setMasterVolume,
+        masterVolume, setMasterVolume,
 
-        playheadBeat,
-        setPlayheadBeat,
+        playheadBeat, setPlayheadBeat,
         totalBeats,
 
-        snapResolution,
-        setSnapResolution,
-        activeTool,
-        setActiveTool,
+        snapResolution, setSnapResolution,
+        activeTool, setActiveTool,
 
-        clipboard,
-        setClipboard,
+        selectedTrackId, setSelectedTrackId,
 
-        selectedNoteIds,
-        setSelectedNoteIds,
-        scaleRoot,
-        setScaleRoot,
-        scaleType,
-        setScaleType,
+        isStepRecording, setIsStepRecording,
+
+        clipboard, setClipboard,
+
+        selectedNoteIds, setSelectedNoteIds,
+        scaleRoot, setScaleRoot,
+        scaleType, setScaleType,
 
         tracks,
         addTrack,
