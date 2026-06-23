@@ -1,8 +1,10 @@
 .pageContainer {
     display: flex;
     flex-direction: column;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
     height: 100vh;
-    background-color: var(--background-primary);
+    background-color: #080808;
     overflow: hidden;
 }
 

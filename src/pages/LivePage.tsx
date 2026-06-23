@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import styles from './LivePage.module.css';
 import Select from '../components/forms/Select.tsx';
 import Slider from '../components/forms/Slider.tsx';
@@ -10,6 +10,23 @@ import {type MidiParsedMessage} from '../utils/midi.ts';
 import {useTranslation} from "react-i18next";
 import NoteWaterfall, {type WaterfallColorMode, type WaterfallNote} from "../components/widgets/NoteWaterfall.tsx";
 import Piano from "../components/widgets/Piano.tsx";
+import {generateBezierArray, generateMSEGArray} from "../utils/curves.ts";
+import {colors} from "../types";
+
+type EnvData = {
+    time: number;
+    isAdvanced?: boolean;
+    points?: { x: number; y: number }[];
+    handle1?: { x: number; y: number };
+    handle2?: { x: number; y: number };
+};
+
+const getCurve = (data: EnvData | undefined, start: number, end: number) => {
+    if (!data) return undefined;
+    return data.isAdvanced && data.points
+        ? generateMSEGArray(data.points)
+        : (data.handle1 && data.handle2 ? generateBezierArray(start, end, data.handle1, data.handle2) : undefined);
+};
 
 const LivePage = () => {
     const {t} = useTranslation();
@@ -17,11 +34,13 @@ const LivePage = () => {
     const {addMidiListener, removeMidiListener} = useMidi();
     const {presets} = usePreset();
 
-    const [presetId, setPresetId] = useState('piano');
     const [volume, setVolume] = useState(0.8);
-    const [colorMode, setColorMode] = useState<WaterfallColorMode>('rainbow');
+    const [presetId, setPresetId] = useState<string>(() => localStorage.getItem('live_presetId') || 'sine');
+    const [colorMode, setColorMode] = useState<WaterfallColorMode>(() => (localStorage.getItem('live_colorMode') as WaterfallColorMode) || 'rainbow');
 
+    const activeKeysRef = useRef<Set<string>>(new Set());
     const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
+
     const [waterfallNotes, setWaterfallNotes] = useState<WaterfallNote[]>([]);
     const [noteRange, setNoteRange] = useState({start: 'C2', end: 'B6'});
 
@@ -63,10 +82,10 @@ const LivePage = () => {
             oscillatorType: 'sine',
             partials: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             envelope: {
-                attack: 0.02,
+                attack: 0.05,
                 decay: 0.5,
                 sustain: 0.6,
-                release: 0.15 // FIX AUDIO: Valore iniziale molto morbido
+                release: 0.1
             }
         });
 
@@ -75,20 +94,30 @@ const LivePage = () => {
 
     useEffect(() => {
         const preset = presets.find(p => p.id === presetId);
+
+        const atk = (preset?.attack as EnvData | undefined) || {time: 15};
+        const dec = (preset?.decay as EnvData | undefined) || {time: 500};
+        const rel = (preset?.release as EnvData | undefined) || {time: 300};
+
+        const isPercussive = preset?.id === 'piano' || preset?.id === 'guitar' || preset?.id === 'plucks';
+
         updateChannelConfig('live_channel', {
             volume,
             oscillatorType: preset?.oscillatorType || 'sine',
-            partials: preset?.partials,
+            partials: preset?.partials || [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             envelope: {
-                // FIX AUDIO CRITICO: Impostiamo i limiti minimi a 0.02s per l'attacco e 0.15s per il rilascio.
-                // Questo crea una rampa di volume che elimina fisicamente la possibilità che avvengano "click" digitali!
-                attack: Math.max(0.02, (preset?.attack?.time || 15) / 1000),
-                decay: Math.max(0.02, (preset?.decay?.time || 500) / 1000),
-                sustain: preset?.id === 'piano' ? 0 : 0.6,
-                release: Math.max(0.15, (preset?.release?.time || 300) / 1000)
+                attack: Math.max(0.015, atk.time / 1000),
+                decay: Math.max(0.05, dec.time / 1000),
+                sustain: isPercussive ? 0 : 0.6,
+                release: Math.max(0.1, rel.time / 1000),
+                attackCurve: getCurve(preset?.attack as EnvData | undefined, 0.0, 1.0),
+                decayCurve: getCurve(preset?.decay as EnvData | undefined, 1.0, 0.0),
+                releaseCurve: getCurve(preset?.release as EnvData | undefined, 1.0, 0.0)
             }
         });
-    }, [presetId, volume, presets, updateChannelConfig]);
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [presetId, volume, presets]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -98,8 +127,17 @@ const LivePage = () => {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        localStorage.setItem('live_presetId', presetId);
+        localStorage.setItem('live_colorMode', colorMode);
+    }, [presetId, colorMode]);
+
     const handlePlay = useCallback((note: string, velocity: number = 0.8) => {
-        setActiveKeys(prev => new Set(prev).add(note));
+        if (activeKeysRef.current.has(note)) return;
+
+        activeKeysRef.current.add(note);
+        setActiveKeys(new Set(activeKeysRef.current));
+
         setWaterfallNotes(prev => [
             ...prev,
             {id: crypto.randomUUID(), pitch: note, startTime: performance.now(), velocity}
@@ -108,11 +146,11 @@ const LivePage = () => {
     }, [playNote]);
 
     const handleRelease = useCallback((note: string) => {
-        setActiveKeys(prev => {
-            const next = new Set(prev);
-            next.delete(note);
-            return next;
-        });
+        if (!activeKeysRef.current.has(note)) return;
+
+        activeKeysRef.current.delete(note);
+        setActiveKeys(new Set(activeKeysRef.current));
+
         setWaterfallNotes(prev => prev.map(n =>
             n.pitch === note && !n.endTime ? {...n, endTime: performance.now()} : n
         ));
@@ -133,13 +171,10 @@ const LivePage = () => {
         label: t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name || p.id))
     }));
 
-    const colorOptions = [
-        {value: 'rainbow', label: 'Rainbow'},
-        {value: 'cyan', label: 'Ciano'},
-        {value: 'red', label: 'Rosso'},
-        {value: 'green', label: 'Verde'},
-        {value: 'orange', label: 'Arancione'}
-    ];
+    const colorOptions: { value: string, label: string }[] = colors.map(c => ({value: c, label: t(`colors.${c}`)}));
+    colorOptions.push({value: 'rainbow', label: t('colors.rainbow')});
+    colorOptions.push({value: 'per_note', label: t('common.per_note')});
+    colorOptions.push({value: 'random', label: t('common.random')});
 
     return (
         <div className={styles.pageContainer}>
@@ -184,7 +219,6 @@ const LivePage = () => {
             </div>
 
             <div className={styles.playArea}>
-                {/* Nuova struttura a sezioni larghe 100% per riempire i vuoti laterali */}
                 <div className={styles.waterfallSection}>
                     <NoteWaterfall
                         notes={waterfallNotes}

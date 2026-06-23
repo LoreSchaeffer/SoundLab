@@ -23,6 +23,18 @@
     "triangle": "Triangolo",
     "sawtooth": "Dente di sega"
   },
+  "colors": {
+    "red": "Rosso",
+    "orange": "Arancione",
+    "yellow": "Giallo",
+    "green": "Verde",
+    "cyan": "Ciano",
+    "blue": "Blu",
+    "purple": "Viola",
+    "pink": "Rosa",
+    "white": "Bianco",
+    "rainbow": "Arcobaleno"
+  },
   "instruments": {
     "piano": "Pianoforte"
   },
@@ -58,7 +70,9 @@
     "length": "Lunghezza",
     "velocity": "Velocità",
     "spacebar": "Spazio",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "per_note": "Per Nota",
+    "random": "Casuale"
   },
   "nav": {
     "playground": "Parcogiochi Onde",

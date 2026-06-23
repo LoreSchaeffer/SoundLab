@@ -1,9 +1,9 @@
 import styles from './NoteWaterfall.module.css';
 import React, {useEffect, useMemo, useRef} from 'react';
-import {NOTE_NAMES} from '../../types';
+import {type Color, NOTE_NAMES} from '../../types';
 import clsx from 'clsx';
 
-export type WaterfallColorMode = 'cyan' | 'red' | 'green' | 'orange' | 'rainbow';
+export type WaterfallColorMode = Color | 'rainbow' | 'per_note' | 'random';
 
 export type WaterfallNote = {
     id: string;
@@ -45,8 +45,8 @@ const generateKeys = (start: string, end: string) => {
     return keys;
 };
 
-const getNoteColor = (pitch: string, mode: WaterfallColorMode) => {
-    if (mode === 'rainbow') {
+const getNoteColor = (pitch: string, mode: WaterfallColorMode, noteId: string, laneIndex: number, totalLanes: number) => {
+    if (mode === 'per_note') {
         const hues: Record<string, number> = {
             'C': 0, 'C#': 30, 'D': 60, 'D#': 90, 'E': 120,
             'F': 150, 'F#': 180, 'G': 210, 'G#': 240, 'A': 270,
@@ -54,7 +54,20 @@ const getNoteColor = (pitch: string, mode: WaterfallColorMode) => {
         };
         const name = pitch.replace(/[0-9]/g, '');
         return `hsl(${hues[name] || 0}, 80%, 50%)`;
+
+    } else if (mode === 'rainbow') {
+        const hue = Math.floor((laneIndex / Math.max(1, totalLanes - 1)) * 300);
+        return `hsl(${hue}, 80%, 50%)`;
+
+    } else if (mode === 'random') {
+        let hash = 0;
+        for (let i = 0; i < noteId.length; i++) {
+            hash = noteId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash % 360);
+        return `hsl(${hue}, 80%, 50%)`;
     }
+
     return `var(--${mode}-500)`;
 };
 
@@ -96,7 +109,7 @@ const NoteWaterfall = ({notes, startNote = 'A0', endNote = 'C8', speed = 0.3, co
 
     return (
         <div className={styles.container} ref={containerRef}>
-            {lanes.map(lane => (
+            {lanes.map((lane, laneIndex) => (
                 <div
                     key={`lane-${lane.note}`}
                     className={clsx(styles.lane, lane.type === 'white' ? styles.laneWhite : styles.laneBlack)}
@@ -111,7 +124,7 @@ const NoteWaterfall = ({notes, startNote = 'A0', endNote = 'C8', speed = 0.3, co
                                 data-end={n.endTime || ''}
                                 style={{
                                     opacity: Math.max(0.4, n.velocity),
-                                    '--note-color': getNoteColor(n.pitch, colorMode)
+                                    '--note-color': getNoteColor(n.pitch, colorMode, n.id, laneIndex, lanes.length)
                                 } as React.CSSProperties}
                             />
                         ))}

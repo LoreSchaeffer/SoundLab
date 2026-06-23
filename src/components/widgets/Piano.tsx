@@ -89,7 +89,7 @@ const Piano = ({
     }, [startNote, endNote]);
 
     useEffect(() => {
-        const handleGlobalMouseUp = () => isDragging.current = false;
+        const handleGlobalPointerUp = () => isDragging.current = false;
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.repeat) return;
@@ -106,33 +106,39 @@ const Piano = ({
             if (note) releaseNote(note);
         };
 
-        window.addEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('pointerup', handleGlobalPointerUp);
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
 
         return () => {
-            window.removeEventListener('mouseup', handleGlobalMouseUp);
+            window.removeEventListener('pointerup', handleGlobalPointerUp);
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
     }, [playNote, releaseNote, keyboardMap]);
 
-    const handleMouseDown = (note: string, e: React.MouseEvent | React.TouchEvent) => {
+    const handlePointerDown = (note: string, e: React.PointerEvent) => {
         e.preventDefault();
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
         isDragging.current = true;
         playNote(note);
     };
 
-    const handleMouseEnter = (note: string) => {
-        if (isDragging.current) playNote(note);
+    const handlePointerEnter = (note: string, e: React.PointerEvent) => {
+        if (isDragging.current || e.buttons > 0) {
+            isDragging.current = true;
+            playNote(note);
+        }
     };
 
-    const handleMouseLeave = (note: string) => {
+    const handlePointerLeave = (note: string) => {
         releaseNote(note);
     };
 
-    const handleMouseUp = (note: string, e: React.MouseEvent | React.TouchEvent) => {
+    const handlePointerUp = (note: string, e: React.PointerEvent) => {
         e.preventDefault();
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
         releaseNote(note);
     };
 
@@ -152,12 +158,11 @@ const Piano = ({
                                 isWhite ? styles.keyWhite : styles.keyBlack,
                                 isActive && styles.active
                             )}
-                            onMouseDown={(e) => handleMouseDown(note, e)}
-                            onMouseEnter={() => handleMouseEnter(note)}
-                            onMouseLeave={() => handleMouseLeave(note)}
-                            onMouseUp={(e) => handleMouseUp(note, e)}
-                            onTouchStart={(e) => handleMouseDown(note, e)}
-                            onTouchEnd={(e) => handleMouseUp(note, e)}
+                            onPointerDown={(e) => handlePointerDown(note, e)}
+                            onPointerEnter={(e) => handlePointerEnter(note, e)}
+                            onPointerLeave={() => handlePointerLeave(note)}
+                            onPointerUp={(e) => handlePointerUp(note, e)}
+                            onPointerCancel={(e) => handlePointerUp(note, e)}
                         >
                             {showKeys && keyChar && <span className={styles.labelTop}>{keyChar}</span>}
                             {showNotes && <span className={styles.labelBottom}>{note}</span>}
