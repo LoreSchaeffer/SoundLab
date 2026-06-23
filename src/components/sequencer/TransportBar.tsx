@@ -1,5 +1,5 @@
 import styles from './TransportBar.module.css';
-import {MdDeleteSweep, MdFileDownload, MdFileUpload, MdPause, MdPlayArrow, MdRepeat, MdStop} from 'react-icons/md';
+import {MdContentCut, MdDeleteSweep, MdFileDownload, MdFileUpload, MdMouse, MdPause, MdPlayArrow, MdRepeat, MdStop, MdVolumeUp} from 'react-icons/md';
 import Button from '../elements/Button.tsx';
 import {useSequencer} from "../../contexts/SequencerContext.ts";
 import {useTranslation} from "react-i18next";
@@ -8,10 +8,29 @@ import React, {useRef} from "react";
 import {useNotification} from "../../contexts/NotificationContext.ts";
 import {useModal} from "../../contexts/ModalContext.ts";
 import Slider from "../forms/Slider.tsx";
+import Select from "../forms/Select.tsx";
 
 const TransportBar = () => {
     const {t} = useTranslation();
-    const {isPlaying, togglePlay, bpm, setBpm, playheadBeat, setPlayheadBeat, isLooping, toggleLoop, tracks, clearProject, loadProject, masterVolume, setMasterVolume} = useSequencer();
+    const {
+        isPlaying,
+        togglePlay,
+        bpm,
+        setBpm,
+        playheadBeat,
+        setPlayheadBeat,
+        isLooping,
+        toggleLoop,
+        tracks,
+        clearProject,
+        loadProject,
+        masterVolume,
+        setMasterVolume,
+        snapResolution,
+        setSnapResolution,
+        activeTool,
+        setActiveTool
+    } = useSequencer();
     const {openModal, closeModal} = useModal();
     const {addNotification} = useNotification();
 
@@ -79,6 +98,13 @@ const TransportBar = () => {
         });
     };
 
+    const gridOptions = [
+        {value: '1', label: '1/4'},
+        {value: '2', label: '1/8'},
+        {value: '4', label: '1/16'},
+        {value: '0', label: t('common.off')}
+    ];
+
     return (
         <div className={styles.container}>
             <div className={styles.controls}>
@@ -87,7 +113,7 @@ const TransportBar = () => {
                     color="green"
                     onClick={togglePlay}
                     icon={isPlaying ? <MdPause/> : <MdPlayArrow/>}
-                    title={isPlaying ? t('common.pause') : t('common.play')}
+                    title={isPlaying ? t('common.pause') : t('common.play') + ` (${t('common.spacebar')})`}
                 />
                 <Button
                     variant="default"
@@ -110,7 +136,7 @@ const TransportBar = () => {
             </div>
 
             <div className={styles.bpmWrapper}>
-                BPM
+                <span className={styles.label}>BPM</span>
                 <DraggableBadge
                     className={styles.bpmBadge}
                     value={Math.round(bpm)}
@@ -124,32 +150,82 @@ const TransportBar = () => {
                 />
             </div>
 
-            <div className={styles.volumeWrapper}>
-                {t('common.master_volume')}
-                <Slider
-                    value={masterVolume}
-                    onChange={(v) => setMasterVolume(v)}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    compact
+            <div className={styles.toolsSeparator}/>
+
+            <div className={styles.toolsWrapper}>
+                <span className={styles.label}>Grid</span>
+                <div className={styles.gridSelectWrapper}>
+                    <Select
+                        options={gridOptions}
+                        value={String(snapResolution)}
+                        onChange={(val) => setSnapResolution(Number(val?.target ? val.target.value : val))}
+                    />
+                </div>
+            </div>
+
+            <div className={styles.toolsSeparator}/>
+
+            <div className={styles.toolsWrapper}>
+                <Button
+                    variant={activeTool === 'pointer' ? 'active' : 'default'}
+                    color="cyan"
+                    icon={<MdMouse size={16}/>}
+                    onClick={() => setActiveTool('pointer')}
+                    title={t('sequencer.pointer') + ' (V)'}
+                />
+                <Button
+                    variant={activeTool === 'split' ? 'active' : 'default'}
+                    color="cyan"
+                    icon={<MdContentCut size={16}/>}
+                    onClick={() => setActiveTool('split')}
+                    title={t('sequencer.cut') + ' (C)'}
                 />
             </div>
 
-            <div className={styles.projectControls} style={{marginLeft: 'auto', display: 'flex', gap: '8px'}}>
+            <div className={styles.toolsSeparator}/>
+
+            <div className={styles.volumeWrapper}>
+                <MdVolumeUp size={18}/>
+                <div className={styles.volumeSliderWrapper}>
+                    <Slider
+                        value={masterVolume}
+                        onChange={(v) => setMasterVolume(v)}
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        compact
+                    />
+                </div>
+            </div>
+
+            <div className={styles.projectControls}>
                 <Button
                     variant="default"
-                    onClick={() => fileInputRef.current?.click()} icon={<MdFileUpload/>}
+                    onClick={() => fileInputRef.current?.click()}
+                    icon={<MdFileUpload/>}
                     title={t('common.import')}
                 />
                 <Button
                     variant="default"
-                    onClick={handleExport} icon={<MdFileDownload/>}
+                    onClick={handleExport}
+                    icon={<MdFileDownload/>}
                     title={t('common.export')}
                 />
-                <Button variant="default" color="red" onClick={handleClearClick} icon={<MdDeleteSweep/>} title={t('common.clear')}/>
+                <Button
+                    variant="default"
+                    color="red"
+                    onClick={handleClearClick}
+                    icon={<MdDeleteSweep/>}
+                    title={t('common.clear')}
+                />
 
-                <input type="file" ref={fileInputRef} hidden accept=".json" onChange={handleImport}/>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    hidden
+                    accept=".json"
+                    onChange={handleImport}
+                />
             </div>
         </div>
     );

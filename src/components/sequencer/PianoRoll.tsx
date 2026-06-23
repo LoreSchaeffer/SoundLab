@@ -5,6 +5,7 @@ import NoteGrid from './NoteGrid.tsx';
 import type {Track} from "../../contexts/SequencerContext.ts";
 import {PIANO_ROLL_KEYS, UI} from "../../utils/sequencer.ts";
 import {useSynth} from "../../contexts/SynthContext.ts";
+import InspectorSidebar from "./InspectorSidebar.tsx";
 
 type PianoRollProps = {
     track: Track;
@@ -64,7 +65,7 @@ const PianoRoll = ({track}: PianoRollProps) => {
     return (
         <div className={styles.container}>
             <div className={styles.pianoSidebar}>
-                <div className={styles.pianoSpacer}/>
+                <InspectorSidebar track={track}/>
                 <VerticalPiano
                     ref={pianoRef}
                     onScroll={handlePianoScroll}

@@ -1,5 +1,5 @@
 import {createContext, useContext} from 'react';
-import type {InstrumentConfig} from "../types/audio.ts";
+import type {InstrumentConfig} from "../types";
 
 export type SynthContextType = {
     channels: Record<string, InstrumentConfig>;

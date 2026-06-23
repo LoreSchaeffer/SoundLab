@@ -1,6 +1,6 @@
 import {type PropsWithChildren, useCallback, useState} from "react";
 import {SynthContext} from "./SynthContext.ts";
-import type {InstrumentConfig} from "../types/audio.ts";
+import type {InstrumentConfig} from "../types";
 import {AudioEngine} from "../core/AudioEngine.ts";
 
 export const SynthProvider = ({children}: PropsWithChildren) => {
@@ -25,10 +25,22 @@ export const SynthProvider = ({children}: PropsWithChildren) => {
         if (channel) {
             if (updates.volume !== undefined) channel.setVolume(updates.volume);
             channel.updateConfig(updates);
-            setChannelsState(prev => ({
-                ...prev,
-                [id]: {...prev[id], ...updates}
-            }));
+
+            setChannelsState(prev => {
+                const current = prev[id];
+                if (!current) return {...prev, [id]: {...updates} as InstrumentConfig};
+
+                let hasChanges = false;
+                for (const key in updates) {
+                    if (current[key as keyof InstrumentConfig] !== updates[key as keyof InstrumentConfig]) {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+
+                if (!hasChanges) return prev;
+                return {...prev, [id]: {...current, ...updates}};
+            });
         }
     }, []);
 

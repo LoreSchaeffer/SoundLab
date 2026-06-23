@@ -13,17 +13,40 @@ type EnvData = {
 };
 
 const PlaybackEngine = () => {
-    const {isPlaying, setIsPlaying, bpm, playheadBeat, setPlayheadBeat, tracks, isLooping, masterVolume} = useSequencer();
+    const {
+        isPlaying, setIsPlaying, bpm, playheadBeat, setPlayheadBeat,
+        tracks, isLooping, masterVolume
+    } = useSequencer();
+
     const {playNote, releaseNote, registerChannel, updateChannelConfig} = useSynth();
     const {presets} = usePreset();
 
-    const lastTimeRef = useRef<number>(0);
     const activeNotesRef = useRef<Map<string, { channelId: string, pitch: string, endBeat: number }>>(new Map());
-    const playheadRef = useRef(playheadBeat);
+    const tracksRef = useRef(tracks);
+    const presetsRef = useRef(presets);
+    const bpmRef = useRef(bpm);
+    const isLoopingRef = useRef(isLooping);
+    const synthRef = useRef({playNote, releaseNote, setIsPlaying, setPlayheadBeat});
 
     useEffect(() => {
-        playheadRef.current = playheadBeat;
-    }, [playheadBeat]);
+        tracksRef.current = tracks;
+    }, [tracks]);
+
+    useEffect(() => {
+        presetsRef.current = presets;
+    }, [presets]);
+
+    useEffect(() => {
+        bpmRef.current = bpm;
+    }, [bpm]);
+
+    useEffect(() => {
+        isLoopingRef.current = isLooping;
+    }, [isLooping]);
+
+    useEffect(() => {
+        synthRef.current = {playNote, releaseNote, setIsPlaying, setPlayheadBeat};
+    }, [playNote, releaseNote, setIsPlaying, setPlayheadBeat]);
 
     const actualLastBeat = useMemo(() => {
         let maxEnd = 0;
@@ -33,6 +56,18 @@ const PlaybackEngine = () => {
         }));
         return maxEnd > 0 ? maxEnd : 32;
     }, [tracks]);
+
+    const actualLastBeatRef = useRef(actualLastBeat);
+    useEffect(() => {
+        actualLastBeatRef.current = actualLastBeat;
+    }, [actualLastBeat]);
+
+    const configHash = useMemo(() => {
+        const coreData = tracks.map(t => ({
+            id: t.id, name: t.name, presetId: t.presetId, volume: t.volume, isMuted: t.isMuted, isSolo: t.isSolo
+        }));
+        return JSON.stringify({coreData, masterVolume});
+    }, [tracks, masterVolume]);
 
     useEffect(() => {
         const isAnySolo = tracks.some(t => t.isSolo);
@@ -59,7 +94,7 @@ const PlaybackEngine = () => {
             const config = {
                 name: track.name,
                 volume: actualVolume,
-                oscillatorType: (preset?.oscillatorType as "sine" | "square" | "sawtooth" | "triangle" | "custom") || "sine",
+                oscillatorType: preset?.oscillatorType || "sine",
                 partials: partials,
                 envelope: {
                     attack: Math.max(0.001, atk.time / 1000),
@@ -75,67 +110,104 @@ const PlaybackEngine = () => {
             registerChannel({id: track.id, ...config});
             updateChannelConfig(track.id, config);
         });
-    }, [tracks, presets, registerChannel, updateChannelConfig]);
+    }, [configHash, presets, registerChannel, updateChannelConfig]);
 
+    const engineStateRef = useRef({
+        startTime: 0,
+        startBeat: 0,
+        lastProcessedBeat: 0,
+        lastUiUpdateTime: 0
+    });
+
+    useEffect(() => {
+        if (Math.abs(playheadBeat - engineStateRef.current.lastProcessedBeat) > 0.1) {
+            engineStateRef.current.startBeat = playheadBeat;
+            engineStateRef.current.startTime = performance.now();
+            engineStateRef.current.lastProcessedBeat = playheadBeat;
+
+            activeNotesRef.current.forEach((val) => releaseNote(val.channelId, val.pitch));
+            activeNotesRef.current.clear();
+        }
+    }, [playheadBeat, releaseNote]);
+
+    useEffect(() => {
+        if (isPlaying) {
+            engineStateRef.current.startBeat = engineStateRef.current.lastProcessedBeat;
+            engineStateRef.current.startTime = performance.now();
+        }
+    }, [bpm, isPlaying]);
 
     useEffect(() => {
         if (!isPlaying) {
-            lastTimeRef.current = 0;
-            activeNotesRef.current.forEach((val) => releaseNote(val.channelId, val.pitch));
+            activeNotesRef.current.forEach((val) => synthRef.current.releaseNote(val.channelId, val.pitch));
             activeNotesRef.current.clear();
             return;
         }
 
+        engineStateRef.current.startTime = performance.now();
+        engineStateRef.current.startBeat = engineStateRef.current.lastProcessedBeat;
+
         let animationFrameId: number;
 
-        const loop = (timestamp: number) => {
-            if (!lastTimeRef.current) lastTimeRef.current = timestamp;
-            const deltaMs = timestamp - lastTimeRef.current;
-            lastTimeRef.current = timestamp;
+        const loop = () => {
+            const now = performance.now();
+            const elapsedMs = now - engineStateRef.current.startTime;
 
-            const beatsPerSecond = bpm / 60;
-            const deltaBeats = (deltaMs / 1000) * beatsPerSecond;
+            const beatsPerSecond = bpmRef.current / 60;
 
-            const prevBeat = playheadRef.current;
-            const nextBeat = prevBeat + deltaBeats;
+            const currentBeat = engineStateRef.current.startBeat + (elapsedMs / 1000) * beatsPerSecond;
+            const prevBeat = engineStateRef.current.lastProcessedBeat;
 
-            if (nextBeat >= actualLastBeat) {
-                activeNotesRef.current.forEach((val) => releaseNote(val.channelId, val.pitch));
+            const {releaseNote: relNote, playNote: pNote, setPlayheadBeat: setPB, setIsPlaying: setPlay} = synthRef.current;
+            const maxBeat = actualLastBeatRef.current;
+
+            if (currentBeat >= maxBeat) {
+                activeNotesRef.current.forEach((val) => relNote(val.channelId, val.pitch));
                 activeNotesRef.current.clear();
 
-                if (isLooping) {
-                    playheadRef.current = 0;
-                    setPlayheadBeat(0);
+                if (isLoopingRef.current) {
+                    engineStateRef.current.startBeat = 0;
+                    engineStateRef.current.startTime = performance.now();
+                    engineStateRef.current.lastProcessedBeat = 0;
+                    setPB(0);
                     animationFrameId = requestAnimationFrame(loop);
                 } else {
-                    setPlayheadBeat(0);
-                    setIsPlaying(false);
+                    engineStateRef.current.lastProcessedBeat = 0;
+                    setPB(0);
+                    setPlay(false);
                 }
                 return;
             }
 
-            tracks.forEach(track => {
-                if (!track.presetId) return;
-
-                track.notes.forEach(note => {
-                    const noteEnd = note.startBeat + note.durationBeats;
-                    if (note.startBeat >= prevBeat && note.startBeat < nextBeat) {
-                        const activeId = `${track.id}_${note.id}`;
-                        playNote(track.id, note.pitch, note.velocity);
-                        activeNotesRef.current.set(activeId, {channelId: track.id, pitch: note.pitch, endBeat: noteEnd});
-                    }
-                });
-            });
-
             activeNotesRef.current.forEach((val, activeId) => {
-                if (val.endBeat >= prevBeat && val.endBeat < nextBeat) {
-                    releaseNote(val.channelId, val.pitch);
+                if (val.endBeat >= prevBeat && val.endBeat < currentBeat) {
+                    relNote(val.channelId, val.pitch);
                     activeNotesRef.current.delete(activeId);
                 }
             });
 
-            playheadRef.current = nextBeat;
-            setPlayheadBeat(nextBeat);
+            tracksRef.current.forEach(track => {
+                if (!track.presetId) return;
+
+                track.notes.forEach(note => {
+                    if (note.startBeat >= prevBeat && note.startBeat < currentBeat) {
+                        const activeId = `${track.id}_${note.id}`;
+                        pNote(track.id, note.pitch, note.velocity);
+                        activeNotesRef.current.set(activeId, {
+                            channelId: track.id,
+                            pitch: note.pitch,
+                            endBeat: note.startBeat + note.durationBeats
+                        });
+                    }
+                });
+            });
+
+            engineStateRef.current.lastProcessedBeat = currentBeat;
+
+            if (now - engineStateRef.current.lastUiUpdateTime > 33) {
+                setPB(currentBeat);
+                engineStateRef.current.lastUiUpdateTime = now;
+            }
 
             animationFrameId = requestAnimationFrame(loop);
         };
@@ -143,7 +215,7 @@ const PlaybackEngine = () => {
         animationFrameId = requestAnimationFrame(loop);
 
         return () => cancelAnimationFrame(animationFrameId);
-    }, [isPlaying, bpm, tracks, actualLastBeat, isLooping, setIsPlaying, playNote, releaseNote, setPlayheadBeat]);
+    }, [isPlaying]);
 
     return null;
 };

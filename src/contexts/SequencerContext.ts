@@ -1,4 +1,5 @@
 import {createContext, type Dispatch, type SetStateAction, useContext} from "react";
+import type {ScaleType} from "../types";
 
 export type NoteEvent = {
     id: string;
@@ -19,6 +20,8 @@ export type Track = {
     notes: NoteEvent[];
 };
 
+export type ToolType = 'pointer' | 'split';
+
 type SequencerContextType = {
     // Reproduction state
     bpm: number;
@@ -36,8 +39,20 @@ type SequencerContextType = {
     setPlayheadBeat: Dispatch<SetStateAction<number>>;
     totalBeats: number; // Project length
 
+    snapResolution: number;
+    setSnapResolution: Dispatch<SetStateAction<number>>;
+    activeTool: ToolType;
+    setActiveTool: Dispatch<SetStateAction<ToolType>>;
+
     clipboard: Omit<NoteEvent, 'id'>[];
     setClipboard: Dispatch<SetStateAction<Omit<NoteEvent, 'id'>[]>>;
+
+    selectedNoteIds: string[];
+    setSelectedNoteIds: Dispatch<SetStateAction<string[]>>;
+    scaleRoot: string;
+    setScaleRoot: Dispatch<SetStateAction<string>>;
+    scaleType: ScaleType;
+    setScaleType: Dispatch<SetStateAction<ScaleType>>;
 
     // Tracks state
     tracks: Track[];

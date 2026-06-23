@@ -1,9 +1,10 @@
 import styles from './Select.module.css';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import {type Color, getComputedColor} from '../../types';
 import clsx from 'clsx';
 import {MdExpandMore} from 'react-icons/md';
 import {useTranslation} from "react-i18next";
+import {createPortal} from "react-dom";
 
 export type SelectAction = {
     icon: React.ReactNode;
@@ -28,39 +29,67 @@ export type SelectProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' 
     onChange?: (e: any) => void;
     color?: Color;
     icon?: React.ReactNode;
+    compact?: boolean;
 }
 
 const Select = ({
                     options,
                     value,
                     onChange,
-                    color = 'blue',
+                    color = 'cyan',
                     icon,
+                    compact,
                     className,
                     style,
                     ...props
                 }: SelectProps) => {
     const {t} = useTranslation();
     const computedColor = useMemo(() => getComputedColor(color), [color]);
+
     const [isOpen, setIsOpen] = useState(false);
+    const [rect, setRect] = useState<DOMRect | null>(null);
+
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const selectedOption = useMemo(() => options.find(o => o.value === value), [options, value]);
 
+    const toggleOpen = () => {
+        if (!isOpen && wrapperRef.current) setRect(wrapperRef.current.getBoundingClientRect());
+
+        setIsOpen(!isOpen);
+    };
+
     useEffect(() => {
+        if (!isOpen) return;
+
         const handleClickOutside = (event: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
+            const target = event.target as Node;
+
+            if (wrapperRef.current && !wrapperRef.current.contains(target) && dropdownRef.current && !dropdownRef.current.contains(target)) setIsOpen(false);
         };
+
+        const handleScrollOrResize = (event: Event) => {
+            const target = event.target as Node;
+            if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+
+            setIsOpen(false);
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+        };
+    }, [isOpen]);
 
     const handleSelect = (optValue: string) => {
-        if (onChange) {
-            onChange({target: {value: optValue}});
-        }
+        if (onChange) onChange({target: {value: optValue}});
+
         setIsOpen(false);
     };
 
@@ -71,17 +100,23 @@ const Select = ({
         else handleSelect(opt.value);
     };
 
-    const renderLeftIcon = (iconData?: React.ReactNode | string) => {
+    const renderLeftIcon = (iconData?: ReactNode | string) => {
         if (!iconData) return null;
         if (typeof iconData === 'string') return <img src={iconData} alt="" className={styles.optionLeftImg}/>;
+
         return <span className={styles.optionLeftImgIcon}>{iconData}</span>;
     };
 
     return (
         <div
             ref={wrapperRef}
-            className={clsx(styles.wrapper, isOpen && styles.open, className)}
-            style={{'--select-color': computedColor, ...style} as React.CSSProperties}
+            className={clsx(
+                styles.wrapper,
+                isOpen && styles.open,
+                compact && styles.compact,
+                className
+            )}
+            style={{'--select-color': computedColor, ...style} as CSSProperties}
             {...props}
         >
             {icon && <span className={styles.icon}>{icon}</span>}
@@ -89,18 +124,31 @@ const Select = ({
             <button
                 type="button"
                 className={clsx(styles.trigger, icon ? styles.hasIcon : styles.noIcon)}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={toggleOpen}
             >
                 <div className={styles.triggerContent}>
                     {renderLeftIcon(selectedOption?.leftIcon)}
-                    <span>{selectedOption ? selectedOption.label : t('components.misc.select_placeholder')}</span>
+                    <span className={styles.triggerText}>
+                        {selectedOption ? selectedOption.label : t('components.misc.select_placeholder')}
+                    </span>
                 </div>
             </button>
 
-            <span className={clsx(styles.caret, isOpen && styles.open)}><MdExpandMore/></span>
+            <span className={clsx(styles.caret, isOpen && styles.open)}>
+                <MdExpandMore/>
+            </span>
 
-            {isOpen && (
-                <div className={styles.dropdown}>
+            {isOpen && rect && createPortal(
+                <div
+                    ref={dropdownRef}
+                    className={clsx(styles.dropdown, compact && styles.compact)}
+                    style={{
+                        top: `${rect.bottom + 4}px`,
+                        left: `${rect.left}px`,
+                        width: `${rect.width}px`,
+                        '--select-color': computedColor
+                    } as React.CSSProperties}
+                >
                     {options.map((opt) => (
                         <div
                             key={opt.value}
@@ -137,7 +185,8 @@ const Select = ({
                             )}
                         </div>
                     ))}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

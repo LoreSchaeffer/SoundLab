@@ -4,19 +4,42 @@ import Button from '../elements/Button.tsx';
 import {MdAdd} from 'react-icons/md';
 import {useSequencer} from "../../contexts/SequencerContext.ts";
 import TimelineRuler from './TimelineRuler.tsx';
-import React, {type CSSProperties, useRef, useState} from 'react';
+import React, {type CSSProperties, useEffect, useRef, useState} from 'react';
 import {useTranslation} from "react-i18next";
 import {UI} from "../../utils/sequencer.ts";
 import Cursor from "./Cursor.tsx";
 
 const ArrangementView = () => {
     const {t} = useTranslation();
-    const {tracks, addTrack, playheadBeat} = useSequencer();
+    const {tracks, addTrack, playheadBeat, setActiveTool, togglePlay} = useSequencer();
 
     const tracksWrapperRef = useRef<HTMLDivElement>(null);
     const rulerScrollRef = useRef<HTMLDivElement>(null);
 
     const [ghostBeat, setGhostBeat] = useState<number | null>(null);
+
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            }
+
+            if (e.key.toLowerCase() === 'v') {
+                setActiveTool('pointer');
+            }
+            
+            if (e.key.toLowerCase() === 'c') {
+                setActiveTool('split');
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [togglePlay, setActiveTool]);
 
     const handleTracksScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (rulerScrollRef.current) rulerScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;

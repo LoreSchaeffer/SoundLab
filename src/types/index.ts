@@ -1,6 +1,6 @@
 export * from './audio';
 export * from './colors';
-export * from './music';
+export * from './music.ts';
 export * from './preset';
 
 export type Coord = {

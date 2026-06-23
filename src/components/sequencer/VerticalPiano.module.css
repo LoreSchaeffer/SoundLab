@@ -84,3 +84,17 @@
 .hoveredBlack {
     background-color: #3b4c66;
 }
+
+.keyWhite.outOfScale {
+    background-color: #64748b;
+    color: #334155;
+    box-shadow: none;
+    border-bottom: 1px solid #475569;
+}
+
+.keyBlack.outOfScale {
+    background-color: #020617;
+    color: #334155;
+    box-shadow: none;
+    border-bottom: 1px solid #000;
+}

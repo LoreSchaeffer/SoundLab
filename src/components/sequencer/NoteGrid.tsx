@@ -1,18 +1,18 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {type CSSProperties, useEffect, useRef, useState} from 'react';
 import styles from './NoteGrid.module.css';
 import {type Track, useSequencer} from '../../contexts/SequencerContext.ts';
 import {PIANO_ROLL_HEIGHT, PIANO_ROLL_KEYS, UI} from "../../utils/sequencer.ts";
 import clsx from "clsx";
-
-const SNAP_RESOLUTION = 4;
+import {isNoteInScale} from "../../types";
 
 function useGridInteraction(
     track: Track,
+    containerRef: React.RefObject<HTMLDivElement | null>,
     onPreviewNote?: (pitch: string) => void
 ) {
-    const {addNote, addNotes, removeNote, updateNote, clipboard, setClipboard} = useSequencer();
+    const {addNote, addNotes, removeNote, updateNote, clipboard, setClipboard, snapResolution, activeTool, selectedNoteIds, setSelectedNoteIds, isPlaying} = useSequencer();
 
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const selectedIds = new Set(selectedNoteIds);
     const [boxSelection, setBoxSelection] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
     const [dragState, setDragState] = useState<{
         type: 'move' | 'resize';
@@ -29,29 +29,62 @@ function useGridInteraction(
         const handleMouseMove = (e: MouseEvent) => {
             const deltaX = e.clientX - dragState.startX;
             const deltaY = e.clientY - dragState.startY;
-            const deltaBeats = Math.round((deltaX / UI.BEAT_WIDTH) * SNAP_RESOLUTION) / SNAP_RESOLUTION;
+
+            const rawDeltaBeats = deltaX / UI.BEAT_WIDTH;
+            const deltaBeats = snapResolution > 0
+                ? Math.round(rawDeltaBeats * snapResolution) / snapResolution
+                : rawDeltaBeats;
+
             const deltaKeys = Math.round(deltaY / UI.KEY_HEIGHT);
 
             dragState.notesOrig.forEach(orig => {
                 if (dragState.type === 'move') {
                     const newStart = Math.max(0, orig.origStartBeat + deltaBeats);
                     const newKeyIdx = Math.max(0, Math.min(PIANO_ROLL_KEYS.length - 1, orig.origKeyIndex + deltaKeys));
-                    updateNote(track.id, orig.id, {startBeat: newStart, pitch: PIANO_ROLL_KEYS[newKeyIdx].note});
+
+                    updateNote(
+                        track.id,
+                        orig.id,
+                        {
+                            startBeat: newStart,
+                            pitch: PIANO_ROLL_KEYS[newKeyIdx].note
+                        }
+                    );
                 } else if (dragState.type === 'resize') {
-                    const newDuration = Math.max(0.25, orig.origDuration + deltaBeats);
-                    updateNote(track.id, orig.id, {durationBeats: newDuration});
+                    const newDuration = Math.max(0.125, orig.origDuration + deltaBeats);
+                    updateNote(
+                        track.id,
+                        orig.id,
+                        {
+                            durationBeats: newDuration
+                        }
+                    );
                 }
             });
         };
 
-        const handleMouseUp = () => setDragState(null);
+        const handleMouseUp = (e: MouseEvent) => {
+            if (!isPlaying && dragState.type === 'move' && dragState.notesOrig.length > 0) {
+                const deltaY = e.clientY - dragState.startY;
+                const deltaKeys = Math.round(deltaY / UI.KEY_HEIGHT);
+
+                const firstOrig = dragState.notesOrig[0];
+                const newKeyIdx = Math.max(0, Math.min(PIANO_ROLL_KEYS.length - 1, firstOrig.origKeyIndex + deltaKeys));
+
+                onPreviewNote?.(PIANO_ROLL_KEYS[newKeyIdx].note);
+            }
+
+            setDragState(null);
+        };
+
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
+
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [dragState, track.id, updateNote]);
+    }, [dragState, track.id, updateNote, snapResolution, isPlaying, onPreviewNote]);
 
     const onGridMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target !== e.currentTarget) return;
@@ -63,6 +96,7 @@ function useGridInteraction(
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
             hasMoved = true;
+
             const currentX = moveEvent.clientX - rect.left;
             const currentY = moveEvent.clientY - rect.top;
 
@@ -86,7 +120,7 @@ function useGridInteraction(
                 }
             });
 
-            setSelectedIds(e.shiftKey || e.metaKey || e.ctrlKey ? new Set([...selectedIds, ...newSelected]) : newSelected);
+            setSelectedNoteIds(e.shiftKey || e.metaKey || e.ctrlKey ? Array.from(new Set([...selectedIds, ...newSelected])) : Array.from(newSelected));
         };
 
         const handleMouseUp = () => {
@@ -95,15 +129,26 @@ function useGridInteraction(
             setBoxSelection(null);
 
             if (!hasMoved) {
-                const beat = Math.floor(startX / UI.BEAT_WIDTH);
+                let beat = startX / UI.BEAT_WIDTH;
+                if (snapResolution > 0) beat = Math.floor(beat * snapResolution) / snapResolution;
+
                 const keyIndex = Math.floor(startY / UI.KEY_HEIGHT);
                 const pitch = PIANO_ROLL_KEYS[keyIndex]?.note;
 
                 if (pitch) {
-                    addNote(track.id, {pitch, startBeat: beat, durationBeats: 1, velocity: 0.8});
-                    onPreviewNote?.(pitch);
+                    addNote(
+                        track.id,
+                        {
+                            pitch,
+                            startBeat: beat,
+                            durationBeats: snapResolution > 0 ? (1 / snapResolution) : 1,
+                            velocity: 0.8
+                        }
+                    );
+
+                    if (!isPlaying) onPreviewNote?.(pitch);
                 }
-                if (!e.shiftKey && !e.ctrlKey && !e.metaKey) setSelectedIds(new Set());
+                if (!e.shiftKey && !e.ctrlKey && !e.metaKey) setSelectedNoteIds([]);
             }
         };
 
@@ -118,15 +163,41 @@ function useGridInteraction(
         const note = track.notes.find(n => n.id === noteId);
         if (!note) return;
 
+        if (activeTool === 'split') {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            let splitBeat = x / UI.BEAT_WIDTH;
+
+            if (snapResolution > 0) splitBeat = Math.round(splitBeat * snapResolution) / snapResolution;
+
+            if (splitBeat > note.startBeat && splitBeat < note.startBeat + note.durationBeats) {
+                const firstDuration = splitBeat - note.startBeat;
+                const secondDuration = note.durationBeats - firstDuration;
+
+                updateNote(track.id, note.id, {durationBeats: firstDuration});
+                addNote(
+                    track.id,
+                    {
+                        pitch: note.pitch,
+                        startBeat: splitBeat,
+                        durationBeats: secondDuration,
+                        velocity: note.velocity
+                    }
+                );
+            }
+            return;
+        }
+
         let newSelected = new Set(selectedIds);
         if (e.shiftKey || e.ctrlKey || e.metaKey) {
             if (newSelected.has(noteId)) newSelected.delete(noteId);
             else newSelected.add(noteId);
 
-            setSelectedIds(newSelected);
+            setSelectedNoteIds(Array.from(newSelected));
         } else if (!newSelected.has(noteId)) {
             newSelected = new Set([noteId]);
-            setSelectedIds(newSelected);
+            setSelectedNoteIds(Array.from(newSelected));
         }
 
         const notesOrig = track.notes.filter(n => newSelected.has(n.id)).map(n => ({
@@ -136,7 +207,12 @@ function useGridInteraction(
             origKeyIndex: PIANO_ROLL_KEYS.findIndex(k => k.note === n.pitch)
         }));
 
-        setDragState({type: isResize ? 'resize' : 'move', startX: e.clientX, startY: e.clientY, notesOrig});
+        setDragState({
+            type: isResize ? 'resize' : 'move',
+            startX: e.clientX,
+            startY: e.clientY,
+            notesOrig
+        });
     };
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -159,16 +235,26 @@ function useGridInteraction(
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 e.preventDefault();
                 selectedIds.forEach(id => removeNote(track.id, id));
-                setSelectedIds(new Set());
+                setSelectedNoteIds([]);
             } else if (e.key === 'Escape') {
                 e.preventDefault();
-                setSelectedIds(new Set());
+                setSelectedNoteIds([]);
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                 e.preventDefault();
-                const delta = e.key === 'ArrowRight' ? (1 / SNAP_RESOLUTION) : -(1 / SNAP_RESOLUTION);
+                const step = snapResolution > 0 ? (1 / snapResolution) : 0.125;
+                const delta = e.key === 'ArrowRight' ? step : -step;
+
                 selectedIds.forEach(id => {
                     const n = track.notes.find(n => n.id === id);
-                    if (n) updateNote(track.id, id, {startBeat: Math.max(0, n.startBeat + delta)});
+                    if (n) {
+                        updateNote(
+                            track.id,
+                            id,
+                            {
+                                startBeat: Math.max(0, n.startBeat + delta)
+                            }
+                        );
+                    }
                 });
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -203,10 +289,10 @@ const NoteGrid = ({
                       onHoverNote
                   }: NoteGridProps) => {
 
-    const {totalBeats, removeNote} = useSequencer();
+    const {totalBeats, removeNote, scaleType, scaleRoot} = useSequencer();
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const {selectedIds, boxSelection, hoverBeatRef, onGridMouseDown, onNoteMouseDown, onKeyDown} = useGridInteraction(track, onPreviewNote);
+    const {selectedIds, boxSelection, hoverBeatRef, onGridMouseDown, onNoteMouseDown, onKeyDown} = useGridInteraction(track, containerRef, onPreviewNote);
 
     return (
         <div
@@ -230,6 +316,19 @@ const NoteGrid = ({
             onMouseLeave={() => onHoverNote?.(null)}
             onKeyDown={onKeyDown}
         >
+
+            {scaleType !== 'chromatic' && PIANO_ROLL_KEYS.map((keyDef, idx) => {
+                if (!isNoteInScale(keyDef.note, scaleRoot, scaleType)) {
+                    return (
+                        <div
+                            key={`out-scale-${keyDef.note}`}
+                            className={styles.outOfScale}
+                            style={{top: `calc(var(--key-height) * ${idx})`} as CSSProperties}
+                        />
+                    );
+                }
+                return null;
+            })}
 
             {hoveredNote && (
                 <div

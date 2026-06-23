@@ -2,6 +2,8 @@ import styles from './VerticalPiano.module.css';
 import React, {forwardRef} from 'react';
 import clsx from 'clsx';
 import {PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
+import {useSequencer} from "../../contexts/SequencerContext.ts";
+import {isNoteInScale} from "../../types";
 
 type VerticalPianoProps = {
     playingNotes?: Set<string>;
@@ -18,16 +20,14 @@ const VerticalPiano = forwardRef<HTMLDivElement, VerticalPianoProps>(({
                                                                           onNoteRelease,
                                                                           onScroll
                                                                       }, ref) => {
+    const {scaleRoot, scaleType} = useSequencer();
 
     return (
-        <div
-            className={styles.container}
-            ref={ref}
-            onScroll={onScroll}
-        >
+        <div className={styles.container} ref={ref} onScroll={onScroll}>
             {PIANO_ROLL_KEYS.map(({note, type}) => {
                 const isActive = playingNotes.has(note);
                 const isHovered = hoveredNote === note;
+                const inScale = isNoteInScale(note, scaleRoot, scaleType);
 
                 return (
                     <div
@@ -36,7 +36,8 @@ const VerticalPiano = forwardRef<HTMLDivElement, VerticalPianoProps>(({
                             styles.key,
                             type === 'white' ? styles.keyWhite : styles.keyBlack,
                             isActive && styles.active,
-                            !isActive && isHovered && (type === 'white' ? styles.hoveredWhite : styles.hoveredBlack)
+                            !isActive && isHovered && (type === 'white' ? styles.hoveredWhite : styles.hoveredBlack),
+                            !inScale && styles.outOfScale
                         )}
                         onMouseDown={() => onNotePlay?.(note)}
                         onMouseUp={() => onNoteRelease?.(note)}

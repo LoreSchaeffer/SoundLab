@@ -68,8 +68,17 @@
     align-items: center;
     gap: 8px;
     overflow: hidden;
+    flex: 1;
+    min-width: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.triggerText {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
 }
 
 .caret {
@@ -88,15 +97,12 @@
 }
 
 .dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    width: 100%;
+    position: fixed;
     background-color: var(--background-secondary);
     border: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+    z-index: 999999;
     max-height: 250px;
     overflow-y: auto;
     display: flex;
@@ -189,4 +195,53 @@
 
 .actionOption:hover {
     background-color: color-mix(in srgb, var(--select-color) 10%, transparent);
+}
+
+.wrapper.compact .trigger {
+    min-height: 24px;
+    font-size: 0.75rem;
+}
+
+.wrapper.compact .trigger.hasIcon {
+    padding: 4px 24px 4px 28px;
+}
+
+.wrapper.compact .trigger.noIcon {
+    padding: 4px 24px 4px 8px;
+}
+
+.wrapper.compact .icon {
+    left: 8px;
+    font-size: 0.9rem;
+}
+
+.wrapper.compact .caret {
+    right: 4px;
+    font-size: 1rem;
+}
+
+.wrapper.compact .option {
+    padding: 6px 8px;
+}
+
+.wrapper.compact .optionLeft {
+    font-size: 0.75rem;
+}
+
+.wrapper.compact .actionBtn {
+    font-size: 0.9rem;
+    padding: 2px;
+}
+
+.dropdown.compact .option {
+    padding: 6px 8px;
+}
+
+.dropdown.compact .optionLeft {
+    font-size: 0.75rem;
+}
+
+.dropdown.compact .actionBtn {
+    font-size: 0.9rem;
+    padding: 2px;
 }

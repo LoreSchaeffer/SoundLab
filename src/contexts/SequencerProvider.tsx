@@ -1,5 +1,6 @@
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from "react";
-import {type NoteEvent, SequencerContext, type Track} from "./SequencerContext.ts";
+import {type NoteEvent, SequencerContext, type ToolType, type Track} from "./SequencerContext.ts";
+import type {ScaleType} from "../types";
 
 const createDefaultTrack = (): Track => ({
     id: crypto.randomUUID(),
@@ -31,11 +32,18 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
     const [isLooping, setIsLooping] = useState<boolean>(true);
     const [playheadBeat, setPlayheadBeat] = useState<number>(0);
 
+    const [snapResolution, setSnapResolution] = useState<number>(initialState?.snapResolution ?? 2);
+    const [activeTool, setActiveTool] = useState<ToolType>('pointer');
+
     const [clipboard, setClipboard] = useState<Omit<NoteEvent, 'id'>[]>([]);
 
+    const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
+    const [scaleRoot, setScaleRoot] = useState<string>('C');
+    const [scaleType, setScaleType] = useState<ScaleType>('chromatic');
+
     useEffect(() => {
-        localStorage.setItem('daw_project', JSON.stringify({bpm, tracks, masterVolume}));
-    }, [bpm, tracks, masterVolume]);
+        localStorage.setItem('daw_project', JSON.stringify({bpm, tracks, masterVolume, snapResolution}));
+    }, [bpm, tracks, masterVolume, snapResolution]);
 
     const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
     const toggleLoop = useCallback(() => setIsLooping(p => !p), []);
@@ -128,40 +136,96 @@ export const SequencerProvider = ({children}: { children: ReactNode }) => {
         }));
     }, []);
 
+    const contextValue = useMemo(() => ({bpm,
+        setBpm,
+        isPlaying,
+        setIsPlaying,
+        togglePlay,
+        isLooping,
+        toggleLoop,
+
+        masterVolume,
+        setMasterVolume,
+
+        playheadBeat,
+        setPlayheadBeat,
+        totalBeats,
+
+        snapResolution,
+        setSnapResolution,
+        activeTool,
+        setActiveTool,
+
+        clipboard,
+        setClipboard,
+
+        selectedNoteIds,
+        setSelectedNoteIds,
+        scaleRoot,
+        setScaleRoot,
+        scaleType,
+        setScaleType,
+
+        tracks,
+        addTrack,
+        removeTrack,
+        updateTrack,
+        toggleTrackExpand,
+
+        addNote,
+        addNotes,
+        updateNote,
+        removeNote,
+
+        clearProject,
+        loadProject}), [
+        bpm,
+        setBpm,
+        isPlaying,
+        setIsPlaying,
+        togglePlay,
+        isLooping,
+        toggleLoop,
+
+        masterVolume,
+        setMasterVolume,
+
+        playheadBeat,
+        setPlayheadBeat,
+        totalBeats,
+
+        snapResolution,
+        setSnapResolution,
+        activeTool,
+        setActiveTool,
+
+        clipboard,
+        setClipboard,
+
+        selectedNoteIds,
+        setSelectedNoteIds,
+        scaleRoot,
+        setScaleRoot,
+        scaleType,
+        setScaleType,
+
+        tracks,
+        addTrack,
+        removeTrack,
+        updateTrack,
+        toggleTrackExpand,
+
+        addNote,
+        addNotes,
+        updateNote,
+        removeNote,
+
+        clearProject,
+        loadProject
+    ]);
+
     return (
-        <SequencerContext.Provider value={{
-            bpm,
-            setBpm,
-            isPlaying,
-            setIsPlaying,
-            togglePlay,
-            isLooping,
-            toggleLoop,
-
-            masterVolume,
-            setMasterVolume,
-
-            playheadBeat,
-            setPlayheadBeat,
-            totalBeats,
-
-            clipboard,
-            setClipboard,
-
-            tracks,
-            addTrack,
-            removeTrack,
-            updateTrack,
-            toggleTrackExpand,
-
-            addNote,
-            addNotes,
-            updateNote,
-            removeNote,
-
-            clearProject,
-            loadProject
-        }}>
+        <SequencerContext.Provider value={contextValue}>
             {children}
         </SequencerContext.Provider>
     );

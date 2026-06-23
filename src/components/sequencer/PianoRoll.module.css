@@ -10,13 +10,12 @@
     width: var(--track-header-width);
     flex-shrink: 0;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     background-color: var(--background-secondary);
     z-index: 20;
     position: sticky;
     left: 0;
     border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.2);
-    align-items: flex-end;
 }
 
 .gridWrapper {

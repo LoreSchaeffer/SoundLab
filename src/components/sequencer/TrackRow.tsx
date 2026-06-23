@@ -1,7 +1,7 @@
 import styles from './TrackRow.module.css';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback} from 'react';
 import clsx from 'clsx';
-import {MdDelete, MdKeyboardArrowDown, MdKeyboardArrowRight, MdMusicNote} from 'react-icons/md';
+import {MdAdd, MdDelete, MdEdit, MdKeyboardArrowDown, MdKeyboardArrowRight} from 'react-icons/md';
 import {type Track, useSequencer} from "../../contexts/SequencerContext.ts";
 import PianoRoll from "./PianoRoll.tsx";
 import {usePreset} from "../../contexts/PresetContext.ts";
@@ -10,6 +10,11 @@ import Button from "../elements/Button.tsx";
 import {useModal} from "../../contexts/ModalContext.ts";
 import {PIANO_ROLL_KEYS} from "../../utils/sequencer.ts";
 import Slider from "../forms/Slider.tsx";
+import PresetEditor from "../modals/PresetEditor.tsx";
+import type {InstrumentPreset} from "../../types";
+import {useNotification} from "../../contexts/NotificationContext.ts";
+import Select, {type SelectOption} from "../forms/Select.tsx";
+import {getInstrumentIcon} from "../../utils/icons.tsx";
 
 type TrackRowProps = {
     track: Track;
@@ -18,33 +23,97 @@ type TrackRowProps = {
 const TrackRow = ({track}: TrackRowProps) => {
     const {t} = useTranslation();
     const {updateTrack, toggleTrackExpand, removeTrack, totalBeats} = useSequencer();
-
-    const {presets} = usePreset();
+    const {presets, deleteUserPreset} = usePreset();
+    const {addNotification} = useNotification();
     const {openModal, closeModal} = useModal();
 
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsMenuOpen(false);
-            }
-        };
-
-        if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isMenuOpen]);
-
-    const selectedPreset = presets.find(p => p.id === track.presetId);
-    const presetLabel = selectedPreset
-        ? t(`instruments.${selectedPreset.id}`, t(`waves.${selectedPreset.id}`, selectedPreset.name))
-        : t('common.select_inst_preset');
-
-    const handleSelectPreset = (presetId: string | null) => {
+    const handleSelectPreset = useCallback((presetId: string | null) => {
         updateTrack(track.id, {presetId});
-        setIsMenuOpen(false);
-    };
+    }, [track.id, updateTrack]);
+
+    const editPreset = useCallback((presetId?: string) => {
+        openModal({
+            size: 'xl',
+            hideHeader: true,
+            content: (
+                <PresetEditor
+                    preset={presetId ? presets.find(p => p.id === presetId) : undefined}
+                    color="cyan"
+                    onSave={(id) => handleSelectPreset(id)}
+                />
+            ),
+        });
+    }, [openModal, presets, handleSelectPreset]);
+
+    const deletePreset = useCallback((preset: InstrumentPreset) => {
+        const handleDelete = () => {
+            deleteUserPreset(preset.id);
+
+            if (track.presetId === preset.id) {
+                handleSelectPreset('sine');
+            }
+
+            closeModal();
+            addNotification({
+                variant: 'success',
+                message: t('notifications.inst_preset_deleted.message', 'Preset eliminato'),
+                duration: 4000
+            });
+        }
+
+        openModal({
+            title: t('modals.delete_inst_preset.title', 'Elimina Preset'),
+            size: 'sm',
+            content: <p>{t('modals.delete_inst_preset.description', 'Sei sicuro di voler eliminare questo preset?')}</p>,
+            footer: (
+                <>
+                    <Button color="cyan" variant="default" onClick={closeModal}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button color="red" variant="active" onClick={handleDelete}>
+                        {t('common.delete')}
+                    </Button>
+                </>
+            )
+        });
+    }, [addNotification, closeModal, deleteUserPreset, handleSelectPreset, openModal, t, track.presetId]);
+
+    const presetOptions: SelectOption[] = presets.map(p => {
+        const isBasicWave = ['sine', 'square', 'triangle', 'sawtooth'].includes(p.id);
+        const rightActions = [];
+
+        if (!isBasicWave) {
+            rightActions.push({
+                icon: <MdEdit/>,
+                title: t('components.waveform_controls.edit_inst_preset', 'Modifica'),
+                onClick: (_: React.MouseEvent, val: string) => editPreset(val)
+            });
+
+            if (!p.isFactory) {
+                rightActions.push({
+                    icon: <MdDelete/>,
+                    title: t('components.waveform_controls.delete_inst_preset', 'Elimina'),
+                    colorClass: "var(--red-400)",
+                    onClick: () => deletePreset(p)
+                });
+            }
+        }
+
+        return {
+            value: p.id,
+            label: t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name)),
+            rightActions: rightActions.length > 0 ? rightActions : undefined,
+            leftIcon: getInstrumentIcon(p.id, 16)
+        };
+    });
+
+    presetOptions.push({
+        value: 'action-create',
+        label: t('components.waveform_controls.create_inst_preset', 'Crea nuovo...'),
+        leftIcon: <MdAdd/>,
+        isAction: true,
+        onClick: () => editPreset()
+    });
 
     const handleDeleteClick = () => {
         openModal({
@@ -118,44 +187,13 @@ const TrackRow = ({track}: TrackRowProps) => {
                         </div>
 
                         <div className={styles.headerBottom}>
-                            <div
-                                className={styles.presetSelector}
-                                ref={menuRef}
-                            >
-                                <div
-                                    className={clsx(styles.presetSelectorButton, isMenuOpen && styles.isOpen)}
-                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                >
-                                    <div className={styles.presetLabelWrapper}>
-                                        <MdMusicNote size={14}/>
-                                        <span className={styles.presetLabel}>
-                                            {presetLabel}
-                                        </span>
-                                    </div>
-                                    <MdKeyboardArrowDown size={14}/>
-                                </div>
-
-                                {isMenuOpen && (
-                                    <div className={styles.presetMenu}>
-                                        <div
-                                            className={clsx(styles.presetMenuItem, !track.presetId && styles.activeItem)}
-                                            onClick={() => handleSelectPreset(null)}
-                                        >
-                                            {t('common.select_inst_preset')}
-                                        </div>
-
-                                        {presets.map(p => (
-                                            <div
-                                                key={p.id}
-                                                className={clsx(styles.presetMenuItem, track.presetId === p.id && styles.activeItem)}
-                                                onClick={() => handleSelectPreset(p.id)}
-                                            >
-                                                {t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name))}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <Select
+                                className={styles.inlineSelectWrapper}
+                                options={presetOptions}
+                                value={track.presetId || undefined}
+                                onChange={(e) => handleSelectPreset(e.target ? e.target.value : e)}
+                                compact
+                            />
 
                             <div className={styles.trackVolumeSlider}>
                                 <Slider

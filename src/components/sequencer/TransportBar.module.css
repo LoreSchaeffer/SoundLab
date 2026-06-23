@@ -1,24 +1,24 @@
 .container {
     display: flex;
     align-items: center;
-    padding: 12px 24px;
+    padding: 8px 16px; /* FIX: Padding ridotto per un look più compatto */
     background-color: var(--background-secondary);
     border-bottom: 1px solid hsl(var(--neutral-50-hsl) / 0.08);
-    gap: 24px;
+    gap: 16px; /* FIX: Gap ridotto */
     flex: 0 0 auto;
 }
 
 .controls {
     display: flex;
-    gap: 8px;
+    gap: 4px;
 }
 
 .display {
     background-color: var(--background-primary);
-    padding: 6px 16px;
-    border-radius: 6px;
+    padding: 4px 12px;
+    border-radius: 4px;
     font-family: monospace;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--cyan-500);
     border: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
@@ -32,7 +32,7 @@
 }
 
 .bpmBadge {
-    margin-left: 10px;
+    margin-left: 8px;
 }
 
 .volumeWrapper {
@@ -42,11 +42,40 @@
     color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 700;
-    margin-left: 16px;
+    margin-left: 8px;
 }
 
-.masterVolumeSlider {
+.volumeSliderWrapper {
     width: 80px;
-    accent-color: var(--cyan-500);
-    cursor: pointer;
+}
+
+.toolsSeparator {
+    width: 1px;
+    height: 20px;
+    background-color: hsl(var(--neutral-50-hsl) / 0.1);
+    margin: 0 8px;
+}
+
+.toolsWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-right: 4px;
+    text-transform: uppercase;
+}
+
+.gridSelectWrapper {
+    width: 90px;
+}
+
+.projectControls {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
 }

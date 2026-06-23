@@ -143,79 +143,30 @@
     color: var(--text-primary);
 }
 
-.presetSelector {
-    position: relative;
-    min-width: 0;
-}
-
-.presetSelectorButton {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 2px 6px;
-    margin-left: -6px;
-    border-radius: 4px;
-    width: fit-content;
-    min-width: 150px;
-    max-width: 100%;
-}
-
-.presetSelectorButton:hover,
-.presetSelectorButton.isOpen {
-    color: var(--cyan-500);
-    background-color: hsl(var(--neutral-50-hsl) / 0.05);
-}
-
-.presetLabel {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.inlineSelectWrapper {
     flex: 1;
     min-width: 0;
+    margin-left: -8px;
+    max-width: 130px;
 }
 
-.presetMenu {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    background-color: var(--background-secondary);
-    border: 1px solid hsl(var(--neutral-50-hsl) / 0.15);
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    min-width: 180px;
-    padding: 6px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+.inlineSelectWrapper button {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--text-muted) !important;
+    min-height: 24px !important;
+    padding-left: 8px !important;
 }
 
-.presetMenuItem {
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.1s ease;
+.inlineSelectWrapper button:hover,
+.inlineSelectWrapper:global(.open) button {
+    color: var(--cyan-500) !important;
+    background-color: hsl(var(--neutral-50-hsl) / 0.05) !important;
 }
 
-.presetMenuItem:hover {
-    background-color: hsl(var(--neutral-50-hsl) / 0.08);
-}
-
-.activeItem {
-    background-color: color-mix(in srgb, var(--cyan-500) 15%, transparent);
-    color: var(--cyan-500);
-    font-weight: 700;
-}
-
-.activeItem:hover {
-    background-color: color-mix(in srgb, var(--cyan-500) 25%, transparent);
+.inlineSelectWrapper:hover > span {
+    color: var(--cyan-500) !important;
 }
 
 .timelinePreview {
