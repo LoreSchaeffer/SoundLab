@@ -36,7 +36,13 @@
     "rainbow": "Arcobaleno"
   },
   "instruments": {
-    "piano": "Pianoforte"
+    "piano": "Pianoforte",
+    "synth": "Sintetizzatore",
+    "organ": "Organo",
+    "guitar": "Chitarra",
+    "trumpet": "Tromba",
+    "flute": "Flauto",
+    "violin": "Violino"
   },
   "common": {
     "custom_wave": "Personalizzata",
@@ -72,7 +78,9 @@
     "spacebar": "Spazio",
     "retry": "Riprova",
     "per_note": "Per Nota",
-    "random": "Casuale"
+    "random": "Casuale",
+    "instrument": "Strumento",
+    "color": "Colore"
   },
   "nav": {
     "playground": "Parcogiochi Onde",

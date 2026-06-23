@@ -2,6 +2,13 @@
     --canvasMargin: 5px;
 }
 
+.body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
 .container {
     display: flex;
     flex-direction: column;
@@ -41,6 +48,7 @@
     border: 1px solid hsl(var(--neutral-50-hsl) / 0.15);
     overflow: hidden;
     margin: var(--canvasMargin);
+    flex: 1;
 }
 
 .canvas {

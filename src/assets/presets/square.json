@@ -21,21 +21,21 @@
     0
   ],
   "attack": {
-    "time": 20,
+    "time": 9007199254740991,
     "color": "red",
-    "isAdvanced": false,
+    "isAdvanced": true,
     "handle1": {
       "x": 0,
-      "y": 0
+      "y": 1
     },
     "handle2": {
       "x": 1,
-      "y": 1
+      "y": 0
     },
     "points": [
       {
         "x": 0,
-        "y": 0
+        "y": 1
       },
       {
         "x": 1,

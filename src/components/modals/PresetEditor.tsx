@@ -1,5 +1,5 @@
 import styles from "./PresetEditor.module.css";
-import {type CSSProperties, useEffect, useState} from "react";
+import {type CSSProperties, useCallback, useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {MdClose, MdContentCopy, MdDelete, MdDownload, MdEdit, MdSave, MdTimeline, MdWaves} from "react-icons/md";
 import {type Color, getComputedColor, type InstrumentPreset} from "../../types";
@@ -15,6 +15,8 @@ import Piano from "../widgets/Piano.tsx";
 import clsx from "clsx";
 import {useModal} from "../../contexts/ModalContext.ts";
 import {useNotification} from "../../contexts/NotificationContext.ts";
+import {useMidi} from "../../contexts/MidiContext.ts";
+import type {MidiParsedMessage} from "../../utils/midi.ts";
 
 const PREVIEW_CHANNEL_ID = "preset-editor-preview";
 
@@ -24,17 +26,21 @@ type PresetEditorProps = {
     preset?: InstrumentPreset;
     color?: Color;
     onSave?: (id: string) => void;
+    onMount?: () => void;
+    onUnmount?: () => void;
 }
 
-const PresetEditor = ({preset, color = "cyan", onSave}: PresetEditorProps) => {
+const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: PresetEditorProps) => {
     const {t} = useTranslation();
     const {closeModal} = useModal();
     const {addNotification} = useNotification();
+    const {addMidiListener, removeMidiListener} = useMidi();
     const [activeTab, setActiveTab] = useState<TabType>('osc');
 
     const {saveUserPreset, deleteUserPreset, attackData, setAttackData, decayData, setDecayData, releaseData, setReleaseData, presets} = usePreset();
     const {registerChannel, unregisterChannel, updateChannelConfig, playNote, releaseNote} = useSynth();
 
+    const activeKeysRef = useRef<Set<string>>(new Set());
     const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
     const [triggerEvent, setTriggerEvent] = useState<TriggerEvent | null>(null);
     const [presetName, setPresetName] = useState(preset?.name || "");
@@ -43,6 +49,16 @@ const PresetEditor = ({preset, color = "cyan", onSave}: PresetEditorProps) => {
     const isSystemPreset = preset?.isFactory;
     const isNewPreset = !preset;
     const computedColor = getComputedColor(color);
+
+    useEffect(() => {
+        onMount?.();
+
+        return () => {
+            onUnmount?.();
+        };
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (preset) {
@@ -113,7 +129,7 @@ const PresetEditor = ({preset, color = "cyan", onSave}: PresetEditorProps) => {
             id = preset.id;
         } else {
             id = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
-            if (presets.find(p => p.id === id))  id = id + crypto.randomUUID();
+            if (presets.find(p => p.id === id)) id = id + crypto.randomUUID();
         }
 
         saveUserPreset(id, name, partials);
@@ -160,6 +176,35 @@ const PresetEditor = ({preset, color = "cyan", onSave}: PresetEditorProps) => {
             addNotification({variant: "warning", message: t("notifications.inst_preset_deleted.message")});
         }
     }
+
+    const handlePlay = useCallback((note: string, velocity: number = 1) => {
+        if (activeKeysRef.current.has(note)) return;
+        activeKeysRef.current.add(note);
+        setActiveNotes(new Set(activeKeysRef.current));
+
+        playNote(PREVIEW_CHANNEL_ID, note, velocity);
+        setTriggerEvent({type: 'attack', timestamp: performance.now()});
+    }, [playNote]);
+
+    const handleRelease = useCallback((note: string) => {
+        if (!activeKeysRef.current.has(note)) return;
+        activeKeysRef.current.delete(note);
+        setActiveNotes(new Set(activeKeysRef.current));
+
+        releaseNote(PREVIEW_CHANNEL_ID, note);
+        if (activeKeysRef.current.size === 0) {
+            setTriggerEvent({type: 'release', timestamp: performance.now()});
+        }
+    }, [releaseNote]);
+
+    useEffect(() => {
+        const handleMidi = (msg: MidiParsedMessage) => {
+            if (msg.type === 'noteon' && msg.note) handlePlay(msg.note, msg.velocity);
+            if (msg.type === 'noteoff' && msg.note) handleRelease(msg.note);
+        };
+        addMidiListener(handleMidi);
+        return () => removeMidiListener(handleMidi);
+    }, [addMidiListener, removeMidiListener, handlePlay, handleRelease]);
 
     return (
         <div className={styles.container} style={{'--theme-color': computedColor} as CSSProperties}>

@@ -2,7 +2,7 @@ import type {IconType} from 'react-icons';
 import {LuPiano} from 'react-icons/lu';
 import {MdMusicNote, MdOutlinePiano} from 'react-icons/md';
 import {PiWaveSawtoothBold, PiWaveSineBold, PiWaveSquareBold, PiWaveTriangleBold} from "react-icons/pi";
-import {GiTrumpet, GiViolin} from "react-icons/gi";
+import {GiFlute, GiTrumpet, GiViolin} from "react-icons/gi";
 import {FaGuitar} from "react-icons/fa6";
 
 export const INST_ICONS: Record<string, IconType> = {
@@ -16,6 +16,7 @@ export const INST_ICONS: Record<string, IconType> = {
     'trumpet': GiTrumpet,
     'guitar': FaGuitar,
     'violin': GiViolin,
+    'flute': GiFlute,
 };
 
 export const getInstrumentIcon = (presetId?: string | null, size: number = 14) => {

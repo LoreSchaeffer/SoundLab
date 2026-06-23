@@ -64,20 +64,34 @@ const Piano = ({
         const map: Record<string, string> = {};
         const reverseMap: Record<string, string> = {};
 
-        let wIndex = 0;
-        let bIndex = 0;
+        const whiteKeys = generatedKeys.filter(k => k.type === 'white');
+        const blackKeys = generatedKeys.filter(k => k.type === 'black');
 
-        generatedKeys.forEach(key => {
-            if (key.type === 'white' && wIndex < WHITE_CHARS.length) {
-                const char = WHITE_CHARS[wIndex];
-                map[char] = key.note;
+        let startWhiteIdx = whiteKeys.findIndex(k => k.note === 'C3');
+        let startBlackIdx = blackKeys.findIndex(k => k.note === 'C#3');
+
+        if (startWhiteIdx === -1) {
+            startWhiteIdx = whiteKeys.findIndex(k => k.note === 'C4');
+            startBlackIdx = blackKeys.findIndex(k => k.note === 'C#4');
+        }
+        if (startWhiteIdx === -1) {
+            startWhiteIdx = Math.max(0, Math.floor((whiteKeys.length - WHITE_CHARS.length) / 2));
+            startBlackIdx = Math.max(0, Math.floor((blackKeys.length - BLACK_CHARS.length) / 2));
+        }
+
+        WHITE_CHARS.split('').forEach((char, i) => {
+            const key = whiteKeys[startWhiteIdx + i];
+            if (key) {
+                map[char.toLowerCase()] = key.note;
                 reverseMap[key.note] = char.toUpperCase();
-                wIndex++;
-            } else if (key.type === 'black' && bIndex < BLACK_CHARS.length) {
-                const char = BLACK_CHARS[bIndex];
-                map[char] = key.note;
+            }
+        });
+
+        BLACK_CHARS.split('').forEach((char, i) => {
+            const key = blackKeys[startBlackIdx + i];
+            if (key) {
+                map[char.toLowerCase()] = key.note;
                 reverseMap[key.note] = char.toUpperCase();
-                bIndex++;
             }
         });
 

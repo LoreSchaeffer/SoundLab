@@ -44,9 +44,9 @@
     ]
   },
   "decay": {
-    "time": 1500,
+    "time": 9007199254740991,
     "color": "yellow",
-    "isAdvanced": false,
+    "isAdvanced": true,
     "handle1": {
       "x": 0,
       "y": 1
@@ -62,7 +62,7 @@
       },
       {
         "x": 1,
-        "y": 0
+        "y": 1
       }
     ]
   },

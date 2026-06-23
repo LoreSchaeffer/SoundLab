@@ -1,4 +1,4 @@
-import type {InstrumentConfig} from "../types/audio.ts";
+import type {InstrumentConfig} from "../types";
 
 export const createDefaultInstrument = (id: string, name: string): InstrumentConfig => ({
     id,

@@ -26,8 +26,8 @@ export type WaveformVisualizerProps = React.HTMLAttributes<HTMLDivElement> & {
     showSumWave?: boolean;
     sumWaveColor?: Color;
     header?: ReactElement;
-    width?: number;
-    height?: number;
+    width?: number | string;
+    height?: number | string;
 };
 
 const WaveformVisualizer = ({
@@ -233,7 +233,7 @@ const WaveformVisualizer = ({
             style={{
                 flex: '0 0 auto',
                 minWidth: '300px',
-                width: width ? `${width}px` : '100%',
+                width: width ?? '100%',
                 ...style
             }}
             {...props}
@@ -248,7 +248,10 @@ const WaveformVisualizer = ({
                 <div
                     ref={canvasContainerRef}
                     className={styles.canvasWrapper}
-                    style={{height}}
+                    style={{
+                        height,
+                        flex: height === '100%' ? 1 : 'none'
+                    }}
                 >
                     <canvas ref={canvasRef} className={styles.canvas}/>
                 </div>

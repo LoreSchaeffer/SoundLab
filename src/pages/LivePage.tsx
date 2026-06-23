@@ -1,8 +1,8 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import styles from './LivePage.module.css';
-import Select from '../components/forms/Select.tsx';
+import Select, {type SelectOption} from '../components/forms/Select.tsx';
 import Slider from '../components/forms/Slider.tsx';
-import {MdColorLens, MdMusicNote, MdVolumeUp} from 'react-icons/md';
+import {MdAdd, MdColorLens, MdDelete, MdEdit, MdMusicNote, MdVolumeUp} from 'react-icons/md';
 import {useSynth} from '../contexts/SynthContext.ts';
 import {useMidi} from '../contexts/MidiContext.ts';
 import {usePreset} from '../contexts/PresetContext.ts';
@@ -11,7 +11,11 @@ import {useTranslation} from "react-i18next";
 import NoteWaterfall, {type WaterfallColorMode, type WaterfallNote} from "../components/widgets/NoteWaterfall.tsx";
 import Piano from "../components/widgets/Piano.tsx";
 import {generateBezierArray, generateMSEGArray} from "../utils/curves.ts";
-import {colors} from "../types";
+import {colors, type InstrumentPreset} from "../types";
+import Button from "../components/elements/Button.tsx";
+import PresetEditor from "../components/modals/PresetEditor.tsx";
+import {useModal} from "../contexts/ModalContext.ts";
+import {useNotification} from "../contexts/NotificationContext.ts";
 
 type EnvData = {
     time: number;
@@ -32,7 +36,9 @@ const LivePage = () => {
     const {t} = useTranslation();
     const {playNote, releaseNote, registerChannel, unregisterChannel, updateChannelConfig} = useSynth();
     const {addMidiListener, removeMidiListener} = useMidi();
-    const {presets} = usePreset();
+    const {presets, deleteUserPreset} = usePreset();
+    const {openModal, closeModal} = useModal();
+    const {addNotification} = useNotification();
 
     const [volume, setVolume] = useState(0.8);
     const [presetId, setPresetId] = useState<string>(() => localStorage.getItem('live_presetId') || 'sine');
@@ -40,6 +46,8 @@ const LivePage = () => {
 
     const activeKeysRef = useRef<Set<string>>(new Set());
     const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
+
+    const [isPresetEditorOpen, setIsPresetEditorOpen] = useState(false);
 
     const [waterfallNotes, setWaterfallNotes] = useState<WaterfallNote[]>([]);
     const [noteRange, setNoteRange] = useState({start: 'C2', end: 'B6'});
@@ -133,6 +141,8 @@ const LivePage = () => {
     }, [presetId, colorMode]);
 
     const handlePlay = useCallback((note: string, velocity: number = 0.8) => {
+        console.log('is preset editor open', isPresetEditorOpen);
+        if (isPresetEditorOpen) return;
         if (activeKeysRef.current.has(note)) return;
 
         activeKeysRef.current.add(note);
@@ -143,7 +153,7 @@ const LivePage = () => {
             {id: crypto.randomUUID(), pitch: note, startTime: performance.now(), velocity}
         ]);
         playNote('live_channel', note, velocity);
-    }, [playNote]);
+    }, [isPresetEditorOpen, playNote]);
 
     const handleRelease = useCallback((note: string) => {
         if (!activeKeysRef.current.has(note)) return;
@@ -166,10 +176,102 @@ const LivePage = () => {
         return () => removeMidiListener(handleMidi);
     }, [addMidiListener, removeMidiListener, handlePlay, handleRelease]);
 
-    const presetOptions = presets.map(p => ({
-        value: p.id,
-        label: t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name || p.id))
-    }));
+    const deletePreset = useCallback((preset: InstrumentPreset) => {
+        const handleDelete = () => {
+            deleteUserPreset(preset.id);
+
+            const firstAvailable = presets.find(p => p.id !== preset.id);
+            if (firstAvailable && presetId === preset.id) setPresetId(firstAvailable.id);
+
+            closeModal();
+            addNotification({
+                variant: 'success',
+                message: t('notifications.inst_preset_deleted.message'),
+                duration: 4000
+            });
+        }
+
+        openModal({
+            title: t('modals.delete_inst_preset.title', 'Elimina preset'),
+            size: 'sm',
+            content: <p>{t('modals.delete_inst_preset.description')}</p>,
+            footer: (
+                <>
+                    <Button
+                        color="cyan"
+                        variant="default"
+                        onClick={closeModal}
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                    <Button
+                        color="red"
+                        variant="active"
+                        onClick={handleDelete}
+                    >
+                        {t('common.delete')}
+                    </Button>
+                </>
+            )
+        });
+    }, [addNotification, closeModal, deleteUserPreset, openModal, presets, presetId, t]);
+
+    const editPreset = useCallback((idToEdit?: string) => {
+        const currentActiveNotes = Array.from(activeKeysRef.current);
+        currentActiveNotes.forEach(note => handleRelease(note));
+
+        openModal({
+            size: 'xl',
+            hideHeader: true,
+            content: (
+                <PresetEditor
+                    preset={idToEdit ? presets.find(p => p.id === idToEdit) : undefined}
+                    onSave={(newId) => {
+                        setPresetId(newId);
+                        closeModal();
+                    }}
+                    onMount={() => setIsPresetEditorOpen(true)}
+                    onUnmount={() => setIsPresetEditorOpen(false)}
+                />
+            ),
+        });
+    }, [openModal, presets, handleRelease, closeModal]);
+
+    const presetOptions: SelectOption[] = presets.map(p => {
+        const isBasicWave = ['sine', 'square', 'triangle', 'sawtooth'].includes(p.id);
+        const rightActions = [];
+
+        if (!isBasicWave) {
+            rightActions.push({
+                icon: <MdEdit/>,
+                title: t('components.waveform_controls.edit_inst_preset'),
+                onClick: (_: React.MouseEvent, val: string) => editPreset(val)
+            });
+
+            if (!p.isFactory) {
+                rightActions.push({
+                    icon: <MdDelete/>,
+                    title: t('components.waveform_controls.delete_inst_preset'),
+                    colorClass: "var(--red-400)",
+                    onClick: () => deletePreset(p)
+                });
+            }
+        }
+
+        return {
+            value: p.id,
+            label: t(`instruments.${p.id}`, t(`waves.${p.id}`, p.name)),
+            rightActions: rightActions.length > 0 ? rightActions : undefined
+        };
+    });
+
+    presetOptions.push({
+        value: 'action-create',
+        label: t('components.waveform_controls.create_inst_preset'),
+        leftIcon: <MdAdd/>,
+        isAction: true,
+        onClick: () => editPreset()
+    });
 
     const colorOptions: { value: string, label: string }[] = colors.map(c => ({value: c, label: t(`colors.${c}`)}));
     colorOptions.push({value: 'rainbow', label: t('colors.rainbow')});
@@ -180,19 +282,19 @@ const LivePage = () => {
         <div className={styles.pageContainer}>
             <div className={styles.topBar}>
                 <div className={styles.topBarSection}>
-                    <span className={styles.label}><MdMusicNote/> {t('common.instrument', 'Strumento')}</span>
+                    <span className={styles.label}><MdMusicNote/> {t('common.instrument')}</span>
                     <div className={styles.selectWrapper}>
                         <Select
                             options={presetOptions}
                             value={presetId}
-                            onChange={(e) => setPresetId(e.target.value)}
+                            onChange={(e) => setPresetId(e.target ? e.target.value : e)}
                             color="cyan"
                         />
                     </div>
                 </div>
 
                 <div className={styles.topBarSection}>
-                    <span className={styles.label}><MdColorLens/> {t('common.colors', 'Colori')}</span>
+                    <span className={styles.label}><MdColorLens/> {t('common.color')}</span>
                     <div className={styles.selectWrapper}>
                         <Select
                             options={colorOptions}
@@ -204,7 +306,7 @@ const LivePage = () => {
                 </div>
 
                 <div className={styles.topBarSection} style={{marginLeft: 'auto'}}>
-                    <span className={styles.label}><MdVolumeUp/> {t('common.volume', 'Volume')}</span>
+                    <span className={styles.label}><MdVolumeUp/> {t('common.volume')}</span>
                     <div className={styles.sliderWrapper}>
                         <Slider
                             value={volume}
