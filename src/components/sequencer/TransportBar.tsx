@@ -1,14 +1,18 @@
 import styles from './TransportBar.module.css';
-import {MdContentCut, MdDeleteSweep, MdFileDownload, MdFileUpload, MdMouse, MdPause, MdPlayArrow, MdRepeat, MdStop, MdVolumeUp} from 'react-icons/md';
+import {MdContentCut, MdDeleteSweep, MdFileDownload, MdFileUpload, MdMouse, MdPause, MdPlayArrow, MdRepeat, MdSettingsInputComponent, MdStop, MdVolumeUp} from 'react-icons/md';
 import Button from '../elements/Button.tsx';
 import {useSequencer} from "../../contexts/SequencerContext.ts";
 import {useTranslation} from "react-i18next";
 import DraggableBadge from "../forms/DraggableBadge.tsx";
-import React, {useRef} from "react";
+import React, {useCallback, useEffect, useRef} from "react";
 import {useNotification} from "../../contexts/NotificationContext.ts";
 import {useModal} from "../../contexts/ModalContext.ts";
 import Slider from "../forms/Slider.tsx";
 import Select from "../forms/Select.tsx";
+import {useContextMenu} from "../../contexts/ContextMenuContext.ts";
+import MidiMappingEditor from "../modals/MidiMappingEditor.tsx";
+import {useMidi} from "../../contexts/MidiContext.ts";
+import type {MidiParsedMessage} from "../../utils/midi.ts";
 
 const TransportBar = () => {
     const {t} = useTranslation();
@@ -33,16 +37,18 @@ const TransportBar = () => {
     } = useSequencer();
     const {openModal, closeModal} = useModal();
     const {addNotification} = useNotification();
+    const {openContextMenu} = useContextMenu();
+    const {ccMappings, setCcMapping, addMidiListener, removeMidiListener} = useMidi();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const currentBar = Math.floor(playheadBeat / 4) + 1;
     const currentBeat = Math.floor(playheadBeat % 4) + 1;
 
-    const handleStop = () => {
+    const handleStop = useCallback(() => {
         if (isPlaying) togglePlay();
         setPlayheadBeat(0);
-    };
+    }, [isPlaying, setPlayheadBeat, togglePlay]);
 
     const handleExport = () => {
         const data = JSON.stringify({bpm, tracks}, null, 2);
@@ -98,6 +104,59 @@ const TransportBar = () => {
         });
     };
 
+    const handleMidiLearn = (actionId: string, actionName: string) => (e: React.MouseEvent) => {
+        openContextMenu(e, [
+            {
+                label: t('menus.set_midi_cc'),
+                icon: <MdSettingsInputComponent/>,
+                onClick: () => {
+                    openModal({
+                        size: 'md',
+                        hideHeader: true,
+                        content: (
+                            <MidiMappingEditor
+                                actionName={actionName}
+                                currentCc={ccMappings[actionId]}
+                                onSave={(cc) => {
+                                    setCcMapping(actionId, cc);
+                                    closeModal();
+                                }}
+                                onCancel={closeModal}
+                            />
+                        )
+                    });
+                }
+            }
+        ]);
+    };
+
+    useEffect(() => {
+        const handleMidiAction = (msg: MidiParsedMessage) => {
+            if (msg.type === 'cc' && msg.ccNumber !== undefined && msg.ccValue !== undefined && msg.ccValue > 0) {
+                switch (msg.ccNumber) {
+                    case ccMappings['play']:
+                        togglePlay();
+                        break;
+                    case ccMappings['stop']:
+                        handleStop();
+                        break;
+                    case ccMappings['loop']:
+                        toggleLoop();
+                        break;
+                    case ccMappings['pointer']:
+                        setActiveTool('pointer');
+                        break;
+                    case ccMappings['split']:
+                        setActiveTool('split');
+                        break;
+                }
+            }
+        };
+
+        addMidiListener(handleMidiAction);
+        return () => removeMidiListener(handleMidiAction);
+    }, [addMidiListener, removeMidiListener, ccMappings, togglePlay, handleStop, toggleLoop, setActiveTool]);
+
     const gridOptions = [
         {value: '1', label: '1/4'},
         {value: '2', label: '1/8'},
@@ -112,6 +171,7 @@ const TransportBar = () => {
                     variant={isPlaying ? 'active' : 'default'}
                     color="green"
                     onClick={togglePlay}
+                    onContextMenu={handleMidiLearn('play', t('common.play_pause'))}
                     icon={isPlaying ? <MdPause/> : <MdPlayArrow/>}
                     title={isPlaying ? t('common.pause') : t('common.play') + ` (${t('common.spacebar')})`}
                 />
@@ -120,6 +180,7 @@ const TransportBar = () => {
                     color="red"
                     icon={<MdStop/>}
                     onClick={handleStop}
+                    onContextMenu={handleMidiLearn('stop', t('common.stop'))}
                     title={t('common.stop')}
                 />
                 <Button
@@ -127,7 +188,8 @@ const TransportBar = () => {
                     color="cyan"
                     icon={<MdRepeat/>}
                     onClick={toggleLoop}
-                    title={t('common.loop', 'Loop')}
+                    onContextMenu={handleMidiLearn('loop', t('common.loop'))}
+                    title={t('common.loop')}
                 />
             </div>
 
@@ -171,6 +233,7 @@ const TransportBar = () => {
                     color="cyan"
                     icon={<MdMouse size={16}/>}
                     onClick={() => setActiveTool('pointer')}
+                    onContextMenu={handleMidiLearn('pointer', t('sequencer.pointer'))}
                     title={t('sequencer.pointer') + ' (V)'}
                 />
                 <Button
@@ -178,6 +241,7 @@ const TransportBar = () => {
                     color="cyan"
                     icon={<MdContentCut size={16}/>}
                     onClick={() => setActiveTool('split')}
+                    onContextMenu={handleMidiLearn('split', t('sequencer.cut'))}
                     title={t('sequencer.cut') + ' (C)'}
                 />
             </div>

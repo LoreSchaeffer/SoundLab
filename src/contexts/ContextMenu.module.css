@@ -1,0 +1,58 @@
+.menu {
+    position: fixed;
+    background-color: var(--background-secondary);
+    border: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    min-width: 150px;
+    padding: 4px;
+    z-index: 9999999;
+    display: flex;
+    flex-direction: column;
+    animation: menuFadeIn 0.1s ease-out forwards;
+    transform-origin: top left;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.98) translateY(-2px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: inherit;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.item:hover {
+    background-color: hsl(var(--neutral-50-hsl) / 0.08);
+}
+
+.icon {
+    display: flex;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    transition: color 0.1s ease;
+}
+
+.item:hover .icon {
+    color: inherit;
+}

@@ -1,49 +1,190 @@
-import {type FC, type ReactNode, useEffect, useRef, useState} from 'react';
-import * as Tone from 'tone';
-import {MidiContext, type MidiListener} from "./MidiContext.ts";
+import {type PropsWithChildren, useCallback, useEffect, useRef, useState} from 'react';
+import {MidiContext, type MidiDevice} from './MidiContext.ts';
+import {type MidiParsedMessage, parseMidiMessage} from '../utils/midi.ts';
 
-export const MidiProvider: FC<{ children: ReactNode }> = ({children}) => {
-    const [ready, setReady] = useState(false);
+interface WebMidiMessageEvent {
+    data: Uint8Array;
+}
 
-    const listeners = useRef<Set<MidiListener>>(new Set());
+interface WebMidiPort {
+    id: string;
+    name?: string;
+    manufacturer?: string;
+    state: 'connected' | 'disconnected';
+}
+
+interface WebMidiInput extends WebMidiPort {
+    onmidimessage: ((event: WebMidiMessageEvent) => void) | null;
+}
+
+interface WebMidiOutput extends WebMidiPort {
+}
+
+interface WebMidiAccess {
+    inputs: {
+        forEach: (callback: (input: WebMidiInput) => void) => void;
+        get: (id: string) => WebMidiInput | undefined;
+    };
+    outputs: {
+        forEach: (callback: (output: WebMidiOutput) => void) => void;
+    };
+    onstatechange: (() => void) | null;
+}
+
+type WebMidiNavigator = {
+    requestMIDIAccess?: (options?: { sysex: boolean }) => Promise<unknown>;
+};
+
+export const MidiProvider = ({children}: PropsWithChildren) => {
+    const [isSupported] = useState<boolean>(() => typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator);
+    const [hasPermission, setHasPermission] = useState(false);
+
+    const [inputs, setInputs] = useState<MidiDevice[]>([]);
+    const [outputs, setOutputs] = useState<MidiDevice[]>([]);
+    const [activeInputId, setActiveInputId] = useState<string | null>(null);
+
+    const [ccMappings, setCcMappings] = useState<Record<string, number>>(() => {
+        try {
+            const saved = localStorage.getItem('midi_mappings');
+            return saved ? JSON.parse(saved) : {};
+        } catch {
+            return {};
+        }
+    });
+
+    const midiAccessRef = useRef<WebMidiAccess | null>(null);
+    const listenersRef = useRef<Set<(msg: MidiParsedMessage) => void>>(new Set());
+
+    const addMidiListener = useCallback((callback: (msg: MidiParsedMessage) => void) => {
+        listenersRef.current.add(callback);
+    }, []);
+
+    const removeMidiListener = useCallback((callback: (msg: MidiParsedMessage) => void) => {
+        listenersRef.current.delete(callback);
+    }, []);
+
+    const refreshDevices = useCallback((access: WebMidiAccess) => {
+        const newInputs: MidiDevice[] = [];
+        const newOutputs: MidiDevice[] = [];
+
+        access.inputs.forEach((input) => {
+            newInputs.push({
+                id: input.id,
+                name: input.name || `MIDI Input ${newInputs.length + 1}`,
+                manufacturer: input.manufacturer || 'Unknown',
+                state: input.state
+            });
+        });
+
+        access.outputs.forEach((output) => {
+            newOutputs.push({
+                id: output.id,
+                name: output.name || `MIDI Output ${newOutputs.length + 1}`,
+                manufacturer: output.manufacturer || 'Unknown',
+                state: output.state
+            });
+        });
+
+        setInputs(newInputs);
+        setOutputs(newOutputs);
+
+        if (newInputs.length > 0 && !activeInputId) {
+            setActiveInputId(newInputs[0].id);
+        } else if (newInputs.length === 0) {
+            setActiveInputId(null);
+        }
+    }, [activeInputId]);
+
+    const setCcMapping = useCallback((actionId: string, cc: number | null) => {
+        setCcMappings(prev => {
+            const newMappings = {...prev};
+
+            if (cc === null) delete newMappings[actionId];
+            else newMappings[actionId] = cc;
+
+            localStorage.setItem('midi_mappings', JSON.stringify(newMappings));
+            return newMappings;
+        });
+    }, []);
 
     useEffect(() => {
-        if (!navigator.requestMIDIAccess) {
-            console.warn("Your browser does not support Web MIDI API. MIDI features will be disabled.");
+        if (!isSupported) {
+            console.warn("Web MIDI API not supported in this browser.");
             return;
         }
 
-        navigator.requestMIDIAccess().then((midiAccess) => {
-            setReady(true);
+        let isMounted = true;
+        const nav = navigator as unknown as WebMidiNavigator;
 
-            const handleMidiMessage = (event: MIDIMessageEvent) => {
-                if (!event.data) return;
+        nav.requestMIDIAccess?.({sysex: false})
+            .then((nativeAccess) => {
+                if (!isMounted) return;
 
-                const [status, noteNumber, rawVelocity] = event.data;
-                const command = status >> 4;
-                const noteName = Tone.Frequency(noteNumber, "midi").toNote();
-                const velocity = rawVelocity / 127;
+                const access = nativeAccess as WebMidiAccess;
 
-                if (command === 9 && velocity > 0) listeners.current.forEach(l => l.onNoteOn(noteName, velocity));
-                else if (command === 8 || (command === 9 && velocity === 0)) listeners.current.forEach(l => l.onNoteOff(noteName));
-            };
+                midiAccessRef.current = access;
+                setHasPermission(true);
+                refreshDevices(access);
 
-            midiAccess.inputs.forEach((input) => input.onmidimessage = handleMidiMessage);
+                access.onstatechange = () => {
+                    refreshDevices(access);
+                };
+            })
+            .catch((err) => {
+                console.error("Accesso MIDI negato:", err);
+                setHasPermission(false);
+            });
 
-            midiAccess.onstatechange = (e) => {
-                const port = e.port as MIDIPort;
-                if (port.type === 'input' && port.state === 'connected') (port as MIDIInput).onmidimessage = handleMidiMessage;
-            };
-        }).catch(err => console.error("Error in MIDI access:", err));
-    }, []);
+        return () => {
+            isMounted = false;
+            if (midiAccessRef.current) {
+                midiAccessRef.current.onstatechange = null;
+            }
+        };
+    }, [isSupported, refreshDevices]);
 
-    const subscribe = (listener: MidiListener) => {
-        listeners.current.add(listener);
-        return () => listeners.current.delete(listener);
-    };
+    useEffect(() => {
+        const access = midiAccessRef.current;
+        if (!access) return;
+
+        const handleMidiMessage = (event: WebMidiMessageEvent) => {
+            const parsed = parseMidiMessage(event.data);
+            if (parsed.type !== 'unknown') listenersRef.current.forEach(listener => listener(parsed));
+        };
+
+        access.inputs.forEach((input) => {
+            input.onmidimessage = null;
+        });
+
+        if (activeInputId) {
+            const activeInput = access.inputs.get(activeInputId);
+            if (activeInput) activeInput.onmidimessage = handleMidiMessage;
+        }
+
+        return () => {
+            if (access) {
+                access.inputs.forEach((input) => {
+                    input.onmidimessage = null;
+                });
+            }
+        };
+    }, [activeInputId, hasPermission]);
 
     return (
-        <MidiContext.Provider value={{ready: ready, subscribe}}>
+        <MidiContext.Provider value={{
+            isSupported,
+            hasPermission,
+            inputs,
+            outputs,
+            activeInputId,
+            setActiveInputId,
+
+            ccMappings,
+            setCcMapping,
+
+            addMidiListener,
+            removeMidiListener
+        }}>
             {children}
         </MidiContext.Provider>
     );

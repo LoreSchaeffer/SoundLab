@@ -1,7 +1,7 @@
 import styles from './InspectorSidebar.module.css';
 import {type NoteEvent, type Track, useSequencer} from '../../contexts/SequencerContext.ts';
 import Select from '../forms/Select.tsx';
-import {noteNames, SCALES, type ScaleType} from "../../types";
+import {NOTE_NAMES, SCALES, type ScaleType} from "../../types";
 import Input from "../forms/Input.tsx";
 import {useTranslation} from "react-i18next";
 import React, {useState} from "react";
@@ -28,7 +28,7 @@ const InspectorSidebar = ({track}: InspectorSidebarProps) => {
                     <span className={styles.label}>{t('common.root', 'Root')}</span>
                     <div className={styles.selectWrapper}>
                         <Select
-                            options={noteNames.map(r => ({value: r, label: r}))}
+                            options={NOTE_NAMES.map(r => ({value: r, label: r}))}
                             value={scaleRoot}
                             onChange={(e) => setScaleRoot(e.target ? e.target.value : e)}
                             compact

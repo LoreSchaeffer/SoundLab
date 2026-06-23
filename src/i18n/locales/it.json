@@ -36,10 +36,13 @@
     "play": "Play",
     "stop": "Stop",
     "pause": "Pausa",
+    "play_pause": "Play/Pausa",
+    "loop": "Ripeti",
     "wave": "Onda",
     "cancel": "Annulla",
     "delete": "Elimina",
     "close": "Chiudi",
+    "save": "Salva",
     "oscillator": "Oscillatore",
     "envelope": "Inviluppo",
     "select_inst_preset": "Seleziona strumento",
@@ -54,7 +57,8 @@
     "start": "Inizio",
     "length": "Lunghezza",
     "velocity": "Velocità",
-    "spacebar": "Spazio"
+    "spacebar": "Spazio",
+    "retry": "Riprova"
   },
   "nav": {
     "playground": "Parcogiochi Onde",
@@ -110,7 +114,15 @@
     "clear_sequencer_project": {
       "title": "Cancella Progetto",
       "description": "Sei sicuro di voler cancellare l'intero progetto? Tutte le tracce saranno eliminate."
+    },
+    "midi_mapping_editor": {
+      "description": "Muovi una manopola o premi un pulsante sul tuo controller MIDI per associarlo...",
+      "cc_detected": "CC Rilevato",
+      "remove_mapping": "Rimuovi Mappatura"
     }
+  },
+  "menus": {
+    "set_midi_cc": "Assegna MIDI CC"
   },
   "notifications": {
     "inst_preset_deleted": {

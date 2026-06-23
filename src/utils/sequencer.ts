@@ -1,4 +1,4 @@
-import {noteNames} from '../types';
+import {NOTE_NAMES} from '../types';
 
 export const UI = {
     BEAT_WIDTH: 30,
@@ -31,9 +31,9 @@ export const generateKeys = (start: string, end: string): NoteDef[] => {
 
         if (current === end) break;
 
-        const noteIndex = noteNames.indexOf(noteName);
+        const noteIndex = NOTE_NAMES.indexOf(noteName);
         if (noteIndex === 11) current = `C${octave + 1}`;
-        else current = `${noteNames[noteIndex + 1]}${octave}`;
+        else current = `${NOTE_NAMES[noteIndex + 1]}${octave}`;
 
         if (keys.length > 88) break;
     }

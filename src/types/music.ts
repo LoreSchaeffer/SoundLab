@@ -9,7 +9,7 @@ export const commonNotes = [
     {note: 'C', alteration: '5', frequency: 523.25}
 ];
 
-export const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 export type ScaleType = 'major' | 'minor' | 'chromatic' | 'pentatonic_major' | 'pentatonic_minor';
 
@@ -23,7 +23,7 @@ export const SCALES: Record<ScaleType, number[]> = {
 
 export const getNoteBaseIndex = (note: string) => {
     const cleanNote = note.replace(/\d+$/, '');
-    return noteNames.indexOf(cleanNote);
+    return NOTE_NAMES.indexOf(cleanNote);
 };
 
 export const isNoteInScale = (note: string, root: string, scaleType: ScaleType) => {

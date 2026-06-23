@@ -189,8 +189,7 @@
 .actionOption {
     color: var(--select-color);
     font-weight: 700;
-    border-top: 1px solid hsl(var(--neutral-50-hsl) / 0.1);
-    margin-top: 4px;
+    padding-top: 4px;
 }
 
 .actionOption:hover {
