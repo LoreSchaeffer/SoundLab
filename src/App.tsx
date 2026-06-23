@@ -6,6 +6,7 @@ import PlaygroundPage from "./pages/PlaygroundPage.tsx";
 import MixerPage from "./pages/MixerPage.tsx";
 import SequencerPage from "./pages/SequencerPage.tsx";
 import {SequencerProvider} from "./contexts/SequencerProvider.tsx";
+import LivePage from "./pages/LivePage.tsx";
 
 export type Provider = 'synth' | 'midi';
 
@@ -21,6 +22,7 @@ const locations: AppRoute[] = [
     {path: '/playground', element: <PlaygroundPage/>,},
     {path: '/mixer', element: <MixerPage/>},
     {path: '/sequencer', usePadding: false, element: <SequencerProvider><SequencerPage/></SequencerProvider>},
+    {path: '/live', usePadding: false, element: <LivePage/>},
     {path: '*', element: <div>Page not found</div>},
 ];
 

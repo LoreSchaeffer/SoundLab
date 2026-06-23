@@ -1,7 +1,7 @@
 import styles from './Navbar.module.css';
 import {NavLink} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
-import {MdInfo, MdKeyboardArrowDown, MdLinearScale, MdTune, MdWaves} from 'react-icons/md';
+import {MdInfo, MdKeyboardArrowDown, MdLinearScale, MdOutlinePiano, MdTune, MdWaves} from 'react-icons/md';
 import clsx from 'clsx';
 import {useEffect, useRef, useState} from "react";
 import {supportedLanguages} from "../../i18n/config.ts";
@@ -36,6 +36,7 @@ const Navbar = () => {
     const navItems = [
         {path: '/playground', label: t('nav.playground'), icon: <MdWaves className={styles.navIcon}/>},
         {path: '/mixer', label: t('nav.mixer'), icon: <MdTune className={styles.navIcon}/>},
+        {path: '/live', label: t('nav.live'), icon: <MdOutlinePiano className={styles.navIcon}/>},
         {path: '/sequencer', label: t('nav.sequencer'), icon: <MdLinearScale className={styles.navIcon}/>},
         {path: '/info', label: t('nav.info'), icon: <MdInfo className={styles.navIcon}/>},
     ];

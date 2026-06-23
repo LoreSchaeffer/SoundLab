@@ -1,0 +1,43 @@
+:root {
+    --note-color: var(--cyan-500);
+}
+
+.container {
+    display: flex;
+    position: relative;
+    height: 100%;
+    width: max-content;
+    background-color: transparent;
+    overflow: hidden;
+    align-items: flex-end;
+}
+
+.lane {
+    position: relative;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.laneWhite {
+    width: 48px;
+    border-right: 1px solid hsl(var(--neutral-50-hsl) / 0.05);
+    z-index: 10;
+}
+
+.laneBlack {
+    width: 28px;
+    margin-left: -14px;
+    margin-right: -14px;
+    z-index: 20;
+    background-color: hsl(var(--neutral-50-hsl) / 0.05);
+}
+
+.waterfallNote {
+    position: absolute;
+    width: calc(100% - 4px);
+    left: 2px;
+    border-radius: 4px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.9);
+    background-color: var(--note-color);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--note-color) 60%, transparent);
+}
