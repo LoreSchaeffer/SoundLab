@@ -10,6 +10,7 @@ import {usePreset} from "../contexts/PresetContext.ts";
 import clsx from "clsx";
 import {useTranslation} from "react-i18next";
 import WaveformConfiguration from "../components/forms/WaveformConfiguration.tsx";
+import {generateBezierArray, generateMSEGArray} from "../utils/curves.ts";
 
 const PLAYGROUND_CHANNEL_ID = 'playground-synth';
 
@@ -26,6 +27,7 @@ const PlaygroundPage = () => {
     const [selectedPresetId, setSelectedPresetId] = useState<string>('sine');
     const [oscillatorType, setOscillatorType] = useState<OscillatorType>('sine');
     const [partials, setPartials] = useState<number[]>(presets[0]?.partials || [1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const [customRatios, setCustomRatios] = useState<{ratio: number; amplitude: number}[] | undefined>(presets[0]?.customRatios);
 
     useEffect(() => {
         const config = createDefaultInstrument(PLAYGROUND_CHANNEL_ID, 'Playground');
@@ -51,8 +53,45 @@ const PlaygroundPage = () => {
         if (preset) {
             const newType = preset.oscillatorType || 'custom';
             setPartials(preset.partials);
+            setCustomRatios(preset.customRatios);
             setOscillatorType(newType);
-            updateChannelConfig(PLAYGROUND_CHANNEL_ID, {oscillatorType: newType, partials: preset.partials});
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const getCurve = (data: any, start: number, end: number) => {
+                if (!data) return undefined;
+                return data.isAdvanced && data.points
+                    ? generateMSEGArray(data.points)
+                    : (data.handle1 && data.handle2 ? generateBezierArray(start, end, data.handle1, data.handle2) : undefined);
+            };
+
+            updateChannelConfig(PLAYGROUND_CHANNEL_ID, {
+                oscillatorType: newType,
+                partials: preset.partials,
+                envelope: preset.attack ? {
+                    attack: Math.max(0.001, preset.attack.time / 1000),
+                    decay: Math.max(0.001, preset.decay.time / 1000),
+                    sustain: 0,
+                    release: Math.max(0.001, preset.release.time / 1000),
+                    attackCurve: getCurve(preset.attack, 0.0, 1.0),
+                    decayCurve: getCurve(preset.decay, 1.0, 0.0),
+                    releaseCurve: getCurve(preset.release, 1.0, 0.0)
+                } : undefined,
+                customRatios: preset.customRatios,
+                lfo: preset.lfo,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                noiseLayer: preset.noiseLayer as any,
+                keyTracking: preset.keyTracking,
+                filter: preset.filter ? {
+                    type: preset.filter.type,
+                    cutoff: preset.filter.cutoff,
+                    envelopeAmount: preset.filter.envelopeAmount,
+                    velocitySensitivity: preset.filter.velocitySensitivity,
+                    attack: Math.max(0.001, preset.filter.attack.time / 1000),
+                    decay: Math.max(0.001, preset.filter.decay.time / 1000),
+                    attackCurve: getCurve(preset.filter.attack, 0.0, 1.0),
+                    decayCurve: getCurve(preset.filter.decay, 1.0, 0.0)
+                } : undefined
+            });
         }
     };
 
@@ -91,7 +130,8 @@ const PlaygroundPage = () => {
             amplitude: amplitude,
             phase: phase,
             color: 'yellow',
-            partials: partials
+            partials: partials,
+            customRatios: customRatios
         }
     ]
 

@@ -104,7 +104,22 @@ const PlaybackEngine = () => {
                     attackCurve: getCurve(preset?.attack, 0.0, 1.0),
                     decayCurve: getCurve(preset?.decay, 1.0, 0.0),
                     releaseCurve: getCurve(preset?.release, 1.0, 0.0)
-                }
+                },
+                customRatios: preset?.customRatios,
+                lfo: preset?.lfo,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                noiseLayer: preset?.noiseLayer as any,
+                keyTracking: preset?.keyTracking,
+                filter: preset?.filter ? {
+                    type: preset.filter.type,
+                    cutoff: preset.filter.cutoff,
+                    envelopeAmount: preset.filter.envelopeAmount,
+                    velocitySensitivity: preset.filter.velocitySensitivity,
+                    attack: Math.max(0.001, preset.filter.attack.time / 1000),
+                    decay: Math.max(0.001, preset.filter.decay.time / 1000),
+                    attackCurve: getCurve(preset.filter.attack, 0.0, 1.0),
+                    decayCurve: getCurve(preset.filter.decay, 1.0, 0.0)
+                } : undefined
             };
 
             registerChannel({id: track.id, ...config});

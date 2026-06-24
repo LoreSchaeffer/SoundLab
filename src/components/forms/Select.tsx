@@ -176,6 +176,7 @@ const Select = ({
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 action.onClick(e, opt.value);
+                                                setIsOpen(false);
                                             }}
                                         >
                                             {action.icon}

@@ -101,31 +101,40 @@ const LivePage = () => {
     }, [registerChannel, unregisterChannel]);
 
     useEffect(() => {
-        const preset = presets.find(p => p.id === presetId);
+        const activePreset = presets.find(p => p.id === presetId);
 
-        const atk = (preset?.attack as EnvData | undefined) || {time: 15};
-        const dec = (preset?.decay as EnvData | undefined) || {time: 500};
-        const rel = (preset?.release as EnvData | undefined) || {time: 300};
-
-        const isPercussive = preset?.id === 'piano' || preset?.id === 'guitar' || preset?.id === 'plucks';
-
-        updateChannelConfig('live_channel', {
-            volume,
-            oscillatorType: preset?.oscillatorType || 'sine',
-            partials: preset?.partials || [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            envelope: {
-                attack: Math.max(0.015, atk.time / 1000),
-                decay: Math.max(0.05, dec.time / 1000),
-                sustain: isPercussive ? 0 : 0.6,
-                release: Math.max(0.1, rel.time / 1000),
-                attackCurve: getCurve(preset?.attack as EnvData | undefined, 0.0, 1.0),
-                decayCurve: getCurve(preset?.decay as EnvData | undefined, 1.0, 0.0),
-                releaseCurve: getCurve(preset?.release as EnvData | undefined, 1.0, 0.0)
-            }
-        });
+        if (activePreset) {
+            updateChannelConfig('live_channel', {
+                oscillatorType: activePreset.oscillatorType,
+                partials: activePreset.partials,
+                envelope: {
+                    attack: Math.max(0.001, activePreset.attack.time / 1000),
+                    decay: Math.max(0.001, activePreset.decay.time / 1000),
+                    sustain: 0,
+                    release: Math.max(0.001, activePreset.release.time / 1000),
+                    attackCurve: getCurve(activePreset.attack, 0.0, 1.0),
+                    decayCurve: getCurve(activePreset.decay, 1.0, 0.0),
+                    releaseCurve: getCurve(activePreset.release, 1.0, 0.0)
+                },
+                customRatios: activePreset.customRatios,
+                lfo: activePreset.lfo,
+                noiseLayer: activePreset.noiseLayer as any,
+                keyTracking: activePreset.keyTracking,
+                filter: activePreset.filter ? {
+                    type: activePreset.filter.type,
+                    cutoff: activePreset.filter.cutoff,
+                    envelopeAmount: activePreset.filter.envelopeAmount,
+                    velocitySensitivity: activePreset.filter.velocitySensitivity,
+                    attack: Math.max(0.001, activePreset.filter.attack.time / 1000),
+                    decay: Math.max(0.001, activePreset.filter.decay.time / 1000),
+                    attackCurve: getCurve(activePreset.filter.attack, 0.0, 1.0),
+                    decayCurve: getCurve(activePreset.filter.decay, 1.0, 0.0)
+                } : undefined
+            });
+        }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [presetId, volume, presets]);
+    }, [presetId, presets]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -141,7 +150,6 @@ const LivePage = () => {
     }, [presetId, colorMode]);
 
     const handlePlay = useCallback((note: string, velocity: number = 0.8) => {
-        console.log('is preset editor open', isPresetEditorOpen);
         if (isPresetEditorOpen) return;
         if (activeKeysRef.current.has(note)) return;
 

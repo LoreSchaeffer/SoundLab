@@ -12,12 +12,14 @@ import {useTranslation} from "react-i18next";
 import {usePreset} from "../contexts/PresetContext.ts";
 import WaveformConfiguration from "../components/forms/WaveformConfiguration.tsx";
 import {now} from "tone";
+import {generateBezierArray, generateMSEGArray} from "../utils/curves.ts";
 
 type WaveState = {
     id: string;
     presetId: string;
     type: OscillatorType;
     partials: number[];
+    customRatios?: { ratio: number; amplitude: number }[];
     frequency: number;
     amplitude: number;
     phase: number;
@@ -152,7 +154,45 @@ const MixerPage = () => {
             updateWave(waveId, {
                 presetId: newPresetId,
                 type: preset.oscillatorType || 'custom',
-                partials: preset.partials
+                partials: preset.partials,
+                customRatios: preset.customRatios,
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const getCurve = (data: any, start: number, end: number) => {
+                if (!data) return undefined;
+                return data.isAdvanced && data.points
+                    ? generateMSEGArray(data.points)
+                    : (data.handle1 && data.handle2 ? generateBezierArray(start, end, data.handle1, data.handle2) : undefined);
+            };
+
+            updateChannelConfig(waveId, {
+                oscillatorType: preset.oscillatorType || 'custom',
+                partials: preset.partials,
+                envelope: preset.attack ? {
+                    attack: Math.max(0.001, preset.attack.time / 1000),
+                    decay: Math.max(0.001, preset.decay.time / 1000),
+                    sustain: 0,
+                    release: Math.max(0.001, preset.release.time / 1000),
+                    attackCurve: getCurve(preset.attack, 0.0, 1.0),
+                    decayCurve: getCurve(preset.decay, 1.0, 0.0),
+                    releaseCurve: getCurve(preset.release, 1.0, 0.0)
+                } : undefined,
+                customRatios: preset.customRatios,
+                lfo: preset.lfo,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                noiseLayer: preset.noiseLayer as any,
+                keyTracking: preset.keyTracking,
+                filter: preset.filter ? {
+                    type: preset.filter.type,
+                    cutoff: preset.filter.cutoff,
+                    envelopeAmount: preset.filter.envelopeAmount,
+                    velocitySensitivity: preset.filter.velocitySensitivity,
+                    attack: Math.max(0.001, preset.filter.attack.time / 1000),
+                    decay: Math.max(0.001, preset.filter.decay.time / 1000),
+                    attackCurve: getCurve(preset.filter.attack, 0.0, 1.0),
+                    decayCurve: getCurve(preset.filter.decay, 1.0, 0.0)
+                } : undefined
             });
         }
     };
@@ -168,6 +208,7 @@ const MixerPage = () => {
             phase: w.phase,
             color: w.color,
             partials: w.partials,
+            customRatios: w.customRatios
         }));
 
     return (

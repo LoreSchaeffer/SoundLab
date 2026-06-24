@@ -13,7 +13,7 @@ export type PresetContextType = {
     releaseData: PhaseState;
     setReleaseData: React.Dispatch<React.SetStateAction<PhaseState>>;
 
-    saveUserPreset: (id: string, name: string, partials: number[]) => void;
+    saveUserPreset: (newPreset: InstrumentPreset) => void;
     deleteUserPreset: (id: string) => void;
     exportPresetToFile: (id: string) => void;
     importPresetFromFile: (file: File) => Promise<void>;

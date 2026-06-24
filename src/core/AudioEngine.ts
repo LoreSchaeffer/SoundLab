@@ -1,6 +1,6 @@
 import {Compressor, Limiter, Gain, start} from "tone";
 import {Channel} from "./Channel";
-import type {InstrumentConfig} from "../types/audio.ts";
+import type {InstrumentConfig} from "../types";
 
 class AudioEngineCore {
     private readonly masterVolumeNode: Gain;

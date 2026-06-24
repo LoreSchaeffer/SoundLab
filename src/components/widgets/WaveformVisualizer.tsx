@@ -15,6 +15,7 @@ export type WaveDefinition = {
     amplitude: number;
     color: Color;
     partials?: number[];
+    customRatios?: { ratio: number; amplitude: number }[];
     phase?: number;
 };
 
@@ -83,14 +84,25 @@ const WaveformVisualizer = ({
                 y = ((shiftedT / (2 * Math.PI)) % 1) * 2 - 1;
                 break;
             case 'custom': {
-                const partials = wave.partials || [];
-                const sum = partials.reduce((a, b) => a + b, 0);
-                const scale = sum > 0 ? 1 / Math.max(1, sum * 0.6) : 1;
+                if (wave.customRatios && wave.customRatios.length > 0) {
+                    const sum = wave.customRatios.reduce((a, b) => a + b.amplitude, 0);
+                    const scale = sum > 0 ? 1 / Math.max(1, sum * 0.6) : 1;
 
-                for (let i = 0; i < partials.length; i++) {
-                    if (partials[i] > 0) y += partials[i] * Math.sin(shiftedT * (i + 1));
+                    for (let i = 0; i < wave.customRatios.length; i++) {
+                        const cr = wave.customRatios[i];
+                        if (cr.amplitude > 0) y += cr.amplitude * Math.sin(shiftedT * cr.ratio);
+                    }
+                    y *= scale;
+                } else {
+                    const partials = wave.partials || [];
+                    const sum = partials.reduce((a, b) => a + b, 0);
+                    const scale = sum > 0 ? 1 / Math.max(1, sum * 0.6) : 1;
+
+                    for (let i = 0; i < partials.length; i++) {
+                        if (partials[i] > 0) y += partials[i] * Math.sin(shiftedT * (i + 1));
+                    }
+                    y *= scale;
                 }
-                y *= scale;
                 break;
             }
         }

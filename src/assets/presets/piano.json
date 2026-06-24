@@ -2,7 +2,18 @@
   "id": "piano",
   "name": "Grand Piano",
   "oscillatorType": "custom",
-  "partials": [1.0, 0.70, 0.40, 0.25, 0.12, 0.06, 0.01, 0.02, 0.005, 0.002, 0, 0, 0, 0, 0, 0],
+  "partials": [],
+  "customRatios": [
+    { "ratio": 1.0000, "amplitude": 1.00 },
+    { "ratio": 1.0015, "amplitude": 0.80 },
+    { "ratio": 0.9985, "amplitude": 0.60 },
+    { "ratio": 2.0020, "amplitude": 0.65 },
+    { "ratio": 3.0040, "amplitude": 0.40 },
+    { "ratio": 4.0070, "amplitude": 0.20 },
+    { "ratio": 5.0110, "amplitude": 0.10 },
+    { "ratio": 6.0160, "amplitude": 0.05 },
+    { "ratio": 8.0280, "amplitude": 0.02 }
+  ],
   "attack": {
     "time": 10,
     "color": "red",
@@ -15,8 +26,8 @@
     "isAdvanced": true,
     "points": [
       {"x": 0, "y": 1.0},
-      {"x": 0.05, "y": 0.25},
-      {"x": 0.3, "y": 0.10},
+      {"x": 0.05, "y": 0.35},
+      {"x": 0.3, "y": 0.15},
       {"x": 1.0, "y": 0.0}
     ]
   },
@@ -25,5 +36,44 @@
     "color": "blue",
     "isAdvanced": true,
     "points": [{"x": 0, "y": 1}, {"x": 0.3, "y": 0.15}, {"x": 1, "y": 0}]
+  },
+  "noiseLayer": {
+    "type": "pink",
+    "volume": 0.85,
+    "filterCutoff": 1200,
+    "envelope": {
+      "attack": 0.005,
+      "decay": 0.050,
+      "sustain": 0.0,
+      "release": 0.050
+    }
+  },
+  "lfo": {
+    "frequency": 1.2,
+    "amount": 0.04,
+    "target": "volume",
+    "delay": 400
+  },
+  "filter": {
+    "type": "lowpass",
+    "cutoff": 600,
+    "envelopeAmount": 8000,
+    "velocitySensitivity": 0.85,
+    "attack": {
+      "time": 5,
+      "color": "orange",
+      "isAdvanced": true,
+      "points": [{"x": 0, "y": 0}, {"x": 1, "y": 1.0}]
+    },
+    "decay": {
+      "time": 800,
+      "color": "purple",
+      "isAdvanced": true,
+      "points": [{"x": 0, "y": 1.0}, {"x": 0.15, "y": 0.1}, {"x": 1.0, "y": 0.0}]
+    }
+  },
+  "keyTracking": {
+    "centerNote": "A4",
+    "decayScaling": 0.4
   }
 }

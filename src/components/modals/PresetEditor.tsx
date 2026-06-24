@@ -1,8 +1,8 @@
 import styles from "./PresetEditor.module.css";
 import {type CSSProperties, useCallback, useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {MdClose, MdContentCopy, MdDelete, MdDownload, MdEdit, MdSave, MdTimeline, MdWaves} from "react-icons/md";
-import {type Color, getComputedColor, type InstrumentPreset} from "../../types";
+import {MdClose, MdContentCopy, MdDelete, MdDownload, MdEdit, MdSave, MdTimeline, MdTune, MdWaves} from "react-icons/md";
+import {type Color, getComputedColor, type InstrumentPreset, type PhaseState} from "../../types";
 import {usePreset} from "../../contexts/PresetContext.ts";
 import {useSynth} from "../../contexts/SynthContext.ts";
 import HarmonicsEditor from "../forms/HarmonicsEditor.tsx";
@@ -17,10 +17,11 @@ import {useModal} from "../../contexts/ModalContext.ts";
 import {useNotification} from "../../contexts/NotificationContext.ts";
 import {useMidi} from "../../contexts/MidiContext.ts";
 import type {MidiParsedMessage} from "../../utils/midi.ts";
+import Slider from "../forms/Slider.tsx";
 
 const PREVIEW_CHANNEL_ID = "preset-editor-preview";
 
-type TabType = 'osc' | 'env';
+type TabType = 'osc' | 'env' | 'mod';
 
 type PresetEditorProps = {
     preset?: InstrumentPreset;
@@ -46,15 +47,23 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
     const [presetName, setPresetName] = useState(preset?.name || "");
     const [partials, setPartials] = useState<number[]>(preset?.partials || Array(16).fill(0).fill(1, 0, 1));
 
+    const [filterCutoff, setFilterCutoff] = useState<number>(preset?.filter?.cutoff ?? 20000);
+    const [filterEnvAmount, setFilterEnvAmount] = useState<number>(preset?.filter?.envelopeAmount ?? 0);
+    const [filterAttack, setFilterAttack] = useState<PhaseState>(preset?.filter?.attack || {time: 15, color: 'orange', handle1: {x: 0.1, y: 0.1}, handle2: {x: 0.9, y: 0.9}, isAdvanced: false, points: []});
+    const [filterDecay, setFilterDecay] = useState<PhaseState>(preset?.filter?.decay || {time: 500, color: 'purple', handle1: {x: 0.1, y: 0.9}, handle2: {x: 0.9, y: 0.1}, isAdvanced: false, points: []});
+
+    const [ktCenter, setKtCenter] = useState<string>(preset?.keyTracking?.centerNote || 'A4');
+    const [ktScaling, setKtScaling] = useState<number>(preset?.keyTracking?.decayScaling ?? 1.0);
+
     const isSystemPreset = preset?.isFactory;
     const isNewPreset = !preset;
     const computedColor = getComputedColor(color);
 
     useEffect(() => {
-        onMount?.();
+        if (onMount) onMount();
 
         return () => {
-            onUnmount?.();
+            if (onUnmount) onUnmount();
         };
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,13 +97,15 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                 release: Math.max(0.001, releaseData.time / 1000)
             }
         });
+
         return () => unregisterChannel(PREVIEW_CHANNEL_ID);
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
-        const getCurve = (data: typeof attackData, start: number, end: number) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const getCurve = (data: any, start: number, end: number) =>
             data.isAdvanced && data.points ? generateMSEGArray(data.points) : generateBezierArray(start, end, data.handle1!, data.handle2!);
 
         updateChannelConfig(PREVIEW_CHANNEL_ID, {
@@ -107,56 +118,84 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                 attackCurve: getCurve(attackData, 0.0, 1.0),
                 decayCurve: getCurve(decayData, 1.0, 0.0),
                 releaseCurve: getCurve(releaseData, 1.0, 0.0)
+            },
+            filter: {
+                type: 'lowpass',
+                cutoff: filterCutoff,
+                envelopeAmount: filterEnvAmount,
+                attack: Math.max(0.001, filterAttack.time / 1000),
+                decay: Math.max(0.001, filterDecay.time / 1000),
+                attackCurve: getCurve(filterAttack, 0.0, 1.0),
+                decayCurve: getCurve(filterDecay, 1.0, 0.0),
+            },
+            keyTracking: {
+                centerNote: ktCenter,
+                decayScaling: ktScaling
             }
         });
-    }, [partials, attackData, decayData, releaseData, updateChannelConfig]);
+    }, [partials, attackData, decayData, releaseData, filterCutoff, filterEnvAmount, filterAttack, filterDecay, ktCenter, ktScaling, updateChannelConfig]);
 
     const formatEnvData = (data: typeof attackData) => ({
-        time: data.time,
-        color: data.color,
+        time: data.time, color: data.color,
         handle1: !data.isAdvanced ? data.handle1 : undefined,
         handle2: !data.isAdvanced ? data.handle2 : undefined,
         points: data.isAdvanced ? data.points : undefined
+    });
+
+    const getPresetExportObject = (targetId: string) => ({
+        id: targetId,
+        name: presetName.trim() || "Unnamed Preset",
+        isFactory: false,
+        oscillatorType: "custom" as OscillatorType,
+        partials,
+        attack: attackData,
+        decay: decayData,
+        release: releaseData,
+        filter: {
+            type: 'lowpass' as BiquadFilterType,
+            cutoff: filterCutoff,
+            envelopeAmount: filterEnvAmount,
+            attack: filterAttack,
+            decay: filterDecay
+        },
+        keyTracking: {
+            centerNote: ktCenter,
+            decayScaling: ktScaling
+        }
     });
 
     const handleSave = () => {
         const name = presetName.trim();
         if (!name) return;
 
-        let id: string;
+        let finalId: string;
 
         if (preset && !isSystemPreset) {
-            id = preset.id;
+            finalId = preset.id;
         } else {
-            id = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
-            if (presets.find(p => p.id === id)) id = id + crypto.randomUUID();
+            finalId = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+            if (presets.some(p => p.id === finalId)) finalId = `${finalId}_${crypto.randomUUID().split('-')[0]}`;
         }
 
-        saveUserPreset(id, name, partials);
+        const presetExport = getPresetExportObject(finalId);
+
+        saveUserPreset(presetExport);
+
         addNotification({
             variant: "success",
-            message: isSystemPreset ? t("notifications.inst_preset_saved.saved_copy") : t("notifications.inst_preset_saved.saved")
+            message: (preset && isSystemPreset)
+                ? t("notifications.inst_preset_saved.saved_copy", "Copia salvata con successo")
+                : t("notifications.inst_preset_saved.saved", "Preset salvato")
         });
-        onSave?.(id);
 
+        onSave?.(finalId);
         closeModal();
     };
 
     const handleDownload = () => {
         const name = presetName.trim() || "unnamed_preset";
-        const id = preset && !isSystemPreset
-            ? preset.id
-            : name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
-
-        const presetExport = {
-            id,
-            name: presetName.trim() || "Unnamed Preset",
-            isFactory: false,
-            partials,
-            attack: attackData,
-            decay: decayData,
-            release: releaseData
-        };
+        const id = (preset && !isSystemPreset) ? preset.id : name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const presetExport = getPresetExportObject(id);
 
         const blob = new Blob([JSON.stringify(presetExport, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
@@ -224,53 +263,37 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                             color={color}
                             variant="active"
                             onClick={handleSave}
-                            title={isSystemPreset ? t("modals.edit_inst_preset.save_copy_title") : t("modals.edit_inst_preset.save_title")}
                             icon={isSystemPreset ? <MdContentCopy/> : <MdSave/>}
                         />
                         <Button
                             color="blue"
                             onClick={handleDownload}
-                            title={t("modals.edit_inst_preset.save_json_title")}
                             icon={<MdDownload/>}
                         />
-                        {!isSystemPreset && !isNewPreset && (
-                            <Button
-                                color="red"
-                                onClick={handleDelete}
-                                title={t("modals.edit_inst_preset.delete_title")}
-                                icon={<MdDelete/>}
-                            />
-                        )}
-                        <button
-                            className={styles.closeBtn}
-                            onClick={closeModal}
-                            title={t("common.close")}
-                        >
-                            <MdClose/>
-                        </button>
+
+                        {!isSystemPreset && !isNewPreset && <Button color="red" onClick={handleDelete} icon={<MdDelete/>}/>}
+                        <button className={styles.closeBtn} onClick={closeModal}><MdClose/></button>
                     </div>
                 </div>
 
                 <div className={styles.tabSwitcher}>
-                    <button
-                        className={clsx(styles.tabBtn, activeTab === 'osc' && styles.activeTab)}
-                        onClick={() => setActiveTab('osc')}
-                    >
-                        <MdWaves/> {t("common.oscillator")}
+                    <button className={clsx(styles.tabBtn, activeTab === 'osc' && styles.activeTab)} onClick={() => setActiveTab('osc')}>
+                        <MdWaves/> Oscillatore
                     </button>
-                    <button
-                        className={clsx(styles.tabBtn, activeTab === 'env' && styles.activeTab)}
-                        onClick={() => setActiveTab('env')}
-                    >
-                        <MdTimeline/> {t("common.envelope")}
+                    <button className={clsx(styles.tabBtn, activeTab === 'env' && styles.activeTab)} onClick={() => setActiveTab('env')}>
+                        <MdTimeline/> Inviluppo
+                    </button>
+                    <button className={clsx(styles.tabBtn, activeTab === 'mod' && styles.activeTab)} onClick={() => setActiveTab('mod')}>
+                        <MdTune/> Filtro & Mod
                     </button>
                 </div>
             </div>
 
             <div className={styles.scrollableArea}>
-                {activeTab === 'osc' ? (
+                {activeTab === 'osc' && (
                     <>
                         <WaveformVisualizer
+                            height={80}
                             waves={[{id: "p", label: "", type: "custom", frequency: 440, amplitude: 0.5, color, partials, phase: 0}]}
                         />
                         <HarmonicsEditor
@@ -281,19 +304,14 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                             graphHeightRatio={0.4}
                         />
                     </>
-                ) : (
-                    <>
-                        <Envelope
-                            attack={formatEnvData(attackData)}
-                            decay={formatEnvData(decayData)}
-                            release={formatEnvData(releaseData)}
-                            triggerEvent={triggerEvent}
-                            height={150}
-                        />
+                )}
 
+                {activeTab === 'env' && (
+                    <>
+                        <Envelope attack={formatEnvData(attackData)} decay={formatEnvData(decayData)} release={formatEnvData(releaseData)} triggerEvent={triggerEvent} height={150}/>
                         <div className={styles.curvesGrid}>
                             <CurveEditor
-                                title="Attack"
+                                title={t('common.attack')}
                                 color={attackData.color}
                                 time={attackData.time}
                                 startY={0}
@@ -309,11 +327,10 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                                 onModeChange={(adv) => setAttackData(p => ({...p, isAdvanced: adv}))}
                             />
                             <CurveEditor
-                                title="Decay"
+                                title={t('common.decay')}
                                 color={decayData.color}
                                 time={decayData.time}
-                                startY={1}
-                                endY={0}
+                                startY={1} endY={0}
                                 handle1={decayData.handle1}
                                 handle2={decayData.handle2}
                                 points={decayData.points}
@@ -325,7 +342,7 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                                 onModeChange={(adv) => setDecayData(p => ({...p, isAdvanced: adv}))}
                             />
                             <CurveEditor
-                                title="Release"
+                                title={t('common.release')}
                                 color={releaseData.color}
                                 time={releaseData.time}
                                 startY={1}
@@ -343,32 +360,90 @@ const PresetEditor = ({preset, color = "cyan", onSave, onMount, onUnmount}: Pres
                         </div>
                     </>
                 )}
+
+                {activeTab === 'mod' && (
+                    <div className={styles.modTabContent}>
+                        <div className={styles.modSection}>
+                            <h3 className={styles.modSectionTitleCyan}>{t('modals.edit_inst_preset.key_tracking')}</h3>
+                            <p className={styles.modSectionDesc}>{t('modals.edit_inst_preset.key_tracking_description')}</p>
+                            <div className={styles.modControlsRow} style={{marginBottom: 0}}>
+                                <div>
+                                    <label className={styles.modLabel}>{t('modals.edit_inst_preset.central_note')}</label>
+                                    <input
+                                        className={styles.modInput}
+                                        value={ktCenter}
+                                        onChange={(e) => setKtCenter(e.target.value.toUpperCase())}
+                                    />
+                                </div>
+                                <div className={styles.modControlGroup}>
+                                    <label className={styles.modLabel}>
+                                        {t('modals.edit_inst_preset.decay_scaling')} <span className={styles.modLabelHighlightCyan}>{ktScaling}</span>
+                                    </label>
+                                    <Slider min={0.1} max={1} step={0.01} value={ktScaling} onChange={setKtScaling} color="cyan"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.modSection}>
+                            <h3 className={styles.modSectionTitleOrange}>{t('modals.edit_inst_preset.acoustic_damping')}</h3>
+                            <p className={styles.modSectionDesc}>{t('modals.edit_inst_preset.acoustic_damping_description')}</p>
+
+                            <div className={styles.modControlsRow}>
+                                <div className={styles.modControlGroup}>
+                                    <label className={styles.modLabel}>
+                                        {t('modals.edit_inst_preset.base_cutoff_frequency')} <span className={styles.modLabelHighlightOrange}>{filterCutoff} Hz</span>
+                                    </label>
+                                    <Slider min={20} max={20000} step={10} value={filterCutoff} onChange={setFilterCutoff} color="orange"/>
+                                </div>
+                                <div className={styles.modControlGroup}>
+                                    <label className={styles.modLabel}>
+                                        {t('modals.edit_inst_preset.extra_opening')} <span className={styles.modLabelHighlightOrange}>+{filterEnvAmount} Hz</span>
+                                    </label>
+                                    <Slider min={0} max={20000} step={10} value={filterEnvAmount} onChange={setFilterEnvAmount} color="orange"/>
+                                </div>
+                            </div>
+
+                            <div className={styles.curvesGrid}>
+                                <CurveEditor
+                                    title="Filter Attack"
+                                    color={filterAttack.color}
+                                    time={filterAttack.time}
+                                    startY={0} endY={1}
+                                    handle1={filterAttack.handle1}
+                                    handle2={filterAttack.handle2}
+                                    points={filterAttack.points}
+                                    isAdvanced={filterAttack.isAdvanced}
+                                    allowAdvanced
+                                    onTimeChange={(t) => setFilterAttack(p => ({...p, time: t}))}
+                                    onCurveChange={(h1, h2) => setFilterAttack(p => ({...p, handle1: h1, handle2: h2}))}
+                                    onPointsChange={(pts) => setFilterAttack(p => ({...p, points: pts}))}
+                                    onModeChange={(adv) => setFilterAttack(p => ({...p, isAdvanced: adv}))}
+                                />
+                                <CurveEditor
+                                    title="Filter Decay"
+                                    color={filterDecay.color}
+                                    time={filterDecay.time}
+                                    startY={1}
+                                    endY={0}
+                                    handle1={filterDecay.handle1}
+                                    handle2={filterDecay.handle2}
+                                    points={filterDecay.points}
+                                    isAdvanced={filterDecay.isAdvanced}
+                                    allowAdvanced
+                                    onTimeChange={(t) => setFilterDecay(p => ({...p, time: t}))}
+                                    onCurveChange={(h1, h2) => setFilterDecay(p => ({...p, handle1: h1, handle2: h2}))}
+                                    onPointsChange={(pts) => setFilterDecay(p => ({...p, points: pts}))}
+                                    onModeChange={(adv) => setFilterDecay(p => ({...p, isAdvanced: adv}))}
+                                />
+                            </div>
+                        </div>
+
+                    </div>
+                )}
             </div>
 
             <div className={styles.footerSection}>
-                <Piano
-                    playNote={(n) => {
-                        playNote(PREVIEW_CHANNEL_ID, n, 1);
-                        setTriggerEvent({type: 'attack', timestamp: performance.now()});
-                        setActiveNotes(prev => new Set(prev).add(n));
-                    }}
-                    releaseNote={(n) => {
-                        if (!activeNotes.has(n)) return;
-
-                        releaseNote(PREVIEW_CHANNEL_ID, n);
-                        setActiveNotes(prev => {
-                            const next = new Set(prev);
-                            next.delete(n);
-                            if (next.size === 0) {
-                                setTriggerEvent({type: 'release', timestamp: performance.now()});
-                            }
-                            return next;
-                        });
-                    }}
-                    activeNotes={activeNotes}
-                    startNote="C3"
-                    endNote="C5"
-                />
+                <Piano playNote={handlePlay} releaseNote={handleRelease} activeNotes={activeNotes} startNote="C3" endNote="C5"/>
             </div>
         </div>
     );

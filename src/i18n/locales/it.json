@@ -51,6 +51,10 @@
     "piano": "Piano",
     "forte": "Forte",
     "volume": "Volume",
+    "attack": "Attacco",
+    "decay": "Decadimento",
+    "sustain": "Sostegno",
+    "release": "Rilascio",
     "play": "Play",
     "stop": "Stop",
     "pause": "Pausa",
@@ -128,7 +132,15 @@
       "save_copy_title": "Salva come copia",
       "save_title": "Salva Preset",
       "save_json_title": "Salva Preset come JSON",
-      "delete_title": "Elimina Preset"
+      "delete_title": "Elimina Preset",
+      "key_tracking": "Fisica delle Corde (Key Tracking)",
+      "key_tracking_description": "Simula la massa e l'inerzia della corda. Se il damping è attivo (es. 0.5), salendo di un'ottava rispetto alla nota centrale, il tempo di risonanza verrà dimezzato in automatico, replicando la caduta rapida degli acuti!",
+      "central_note": "Nota Centrale",
+      "decay_scaling": "Scala del Decadimento (1.0 = Spento, 0.5 = Dimezza ogni ottava): ",
+      "acoustic_damping": "Attenuazione Acustica (Filtro Passa Basso)",
+      "acoustic_damping_description": "Taglia le frequenze alte per emulare l'assorbimento acustico del legno. Usa l'involucro per far \"esplodere\" la brillantezza solo all'istante dell'impatto col martelletto.",
+      "base_cutoff_frequency": "Frequenze di Riposo (Base):",
+      "extra_opening": "Apertura Extra (Martelletto):"
     },
     "delete_track": {
       "title": "Elimina Traccia",
