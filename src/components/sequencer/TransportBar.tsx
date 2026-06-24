@@ -1,7 +1,7 @@
 import styles from './TransportBar.module.css';
-import {MdContentCut, MdDeleteSweep, MdFiberManualRecord, MdFileDownload, MdFileUpload, MdMouse, MdPause, MdPlayArrow, MdRepeat, MdSettingsInputComponent, MdStop, MdVolumeUp} from 'react-icons/md';
+import {MdContentCut, MdDeleteSweep, MdFiberManualRecord, MdFileDownload, MdFileUpload, MdMouse, MdMusicNote, MdPause, MdPlayArrow, MdRepeat, MdSettingsInputComponent, MdStop, MdVolumeUp} from 'react-icons/md';
 import Button from '../elements/Button.tsx';
-import {useSequencer} from "../../contexts/SequencerContext.ts";
+import {type NoteEvent, type Track as DawTrack, useSequencer} from "../../contexts/SequencerContext.ts";
 import {useTranslation} from "react-i18next";
 import DraggableBadge from "../forms/DraggableBadge.tsx";
 import React, {useCallback, useEffect, useRef} from "react";
@@ -13,6 +13,7 @@ import {useContextMenu} from "../../contexts/ContextMenuContext.ts";
 import MidiMappingEditor from "../modals/MidiMappingEditor.tsx";
 import {useMidi} from "../../contexts/MidiContext.ts";
 import type {MidiParsedMessage} from "../../utils/midi.ts";
+import {Midi} from "@tonejs/midi";
 
 const TransportBar = () => {
     const {t} = useTranslation();
@@ -34,6 +35,7 @@ const TransportBar = () => {
     const {ccMappings, setCcMapping, addMidiListener, removeMidiListener} = useMidi();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const midiInputRef = useRef<HTMLInputElement>(null);
 
     const currentBar = Math.floor(playheadBeat / 4) + 1;
     const currentBeat = Math.floor(playheadBeat % 4) + 1;
@@ -121,6 +123,68 @@ const TransportBar = () => {
                 }
             }
         ]);
+    };
+
+    const handleMidiImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const midi = new Midi(arrayBuffer);
+
+            const newBpm = midi.header.tempos.length > 0 ? Math.round(midi.header.tempos[0].bpm) : bpm;
+            const secondsPerBeat = 60 / newBpm;
+
+            const newTracks: DawTrack[] = [];
+
+            midi.tracks.forEach((midiTrack, index) => {
+                if (midiTrack.notes.length === 0) return; // TODO Remove percussions
+
+                let presetId = 'piano';
+
+                const instrumentName = midiTrack.instrument?.name || '';
+                const trackName = midiTrack.name || '';
+                const instr = (instrumentName + " " + trackName).toLowerCase();
+
+                if (instr.includes('flute') || instr.includes('piccolo') || instr.includes('recorder') || instr.includes('ocarina')) presetId = 'flute';
+                else if (instr.includes('trumpet') || instr.includes('brass') || instr.includes('horn') || instr.includes('trombone')) presetId = 'trumpet';
+                else if (instr.includes('vibraphone') || instr.includes('mallet') || instr.includes('marimba') || instr.includes('glockenspiel') || instr.includes('bell')) presetId = 'vibraphone';
+                else if (instr.includes('violin') || instr.includes('string') || instr.includes('cello') || instr.includes('viola')) presetId = 'violin';
+                else if (instr.includes('organ')) presetId = 'church_organ';
+                else if (instr.includes('piano') || instr.includes('key')) presetId = 'piano';
+
+                const notes: NoteEvent[] = midiTrack.notes.map(note => ({
+                    id: crypto.randomUUID(),
+                    pitch: note.name,
+                    startBeat: note.time / secondsPerBeat,
+                    durationBeats: note.duration / secondsPerBeat,
+                    velocity: note.velocity
+                }));
+
+                newTracks.push({
+                    id: crypto.randomUUID(),
+                    name: midiTrack.name || `Track ${index + 1} (${midiTrack.instrument.name})`,
+                    presetId: presetId,
+                    volume: 0.8,
+                    isMuted: false,
+                    isSolo: false,
+                    isExpanded: false,
+                    notes: notes
+                });
+            });
+
+            if (newTracks.length > 0) {
+                loadProject({
+                    bpm: newBpm,
+                    tracks: [...tracks, ...newTracks]
+                });
+            }
+        } catch (error) {
+            console.error("Error during MIDI parsing:", error);
+        }
+
+        if (midiInputRef.current) midiInputRef.current.value = '';
     };
 
     useEffect(() => {
@@ -268,6 +332,13 @@ const TransportBar = () => {
             <div className={styles.projectControls}>
                 <Button
                     variant="default"
+                    color="purple"
+                    onClick={() => midiInputRef.current?.click()}
+                    icon={<MdMusicNote/>}
+                    title="Import MIDI File"
+                />
+                <Button
+                    variant="default"
                     onClick={() => fileInputRef.current?.click()}
                     icon={<MdFileUpload/>}
                     title={t('common.import')}
@@ -292,6 +363,13 @@ const TransportBar = () => {
                     hidden
                     accept=".json"
                     onChange={handleImport}
+                />
+                <input
+                    type="file"
+                    ref={midiInputRef}
+                    hidden
+                    accept=".mid,.midi"
+                    onChange={handleMidiImport}
                 />
             </div>
         </div>

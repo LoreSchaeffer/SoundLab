@@ -118,6 +118,7 @@ const LivePage = () => {
                 },
                 customRatios: activePreset.customRatios,
                 lfo: activePreset.lfo,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 noiseLayer: activePreset.noiseLayer as any,
                 keyTracking: activePreset.keyTracking,
                 filter: activePreset.filter ? {
@@ -135,6 +136,10 @@ const LivePage = () => {
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [presetId, presets]);
+
+    useEffect(() => {
+        updateChannelConfig('live_channel', { volume: volume });
+    }, [volume, updateChannelConfig]);
 
     useEffect(() => {
         const interval = setInterval(() => {

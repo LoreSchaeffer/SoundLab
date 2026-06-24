@@ -1,22 +1,21 @@
 {
-  "id": "flute",
-  "name": "Flute",
+  "id": "violin",
+  "name": "Violin",
   "oscillatorType": "custom",
-  "partials": [1.0, 0.75, 0.95, 0.10, 0.06, 0.05, 0.02, 0.01],
+  "partials": [1.000, 0.631, 0.245, 0.211, 0.313, 0.292, 0.178, 0.126, 0.100, 0.269, 0.079, 0.063, 0.050, 0.040, 0.032, 0.025],
   "attack": {
-    "time": 70,
+    "time": 120,
     "color": "red",
     "isAdvanced": true,
-    "points": [{"x": 0, "y": 0}, {"x": 0.4, "y": 0.7}, {"x": 1, "y": 1.0}]
+    "points": [{"x": 0, "y": 0}, {"x": 0.5, "y": 0.5}, {"x": 1, "y": 1.0}]
   },
   "decay": {
-    "time": 1200,
+    "time": 2000,
     "color": "yellow",
     "isAdvanced": true,
     "points": [
       {"x": 0, "y": 1.0},
-      {"x": 0.2, "y": 0.85},
-      {"x": 1.0, "y": 0.80}
+      {"x": 1.0, "y": 0.85}
     ]
   },
   "release": {
@@ -27,41 +26,41 @@
   },
   "noiseLayer": {
     "type": "pink",
-    "volume": 0.01,
+    "volume": 0.04,
     "filterCutoff": 2500,
     "envelope": {
       "attack": 0.080,
-      "decay": 0.850,
-      "sustain": 0.01,
-      "release": 0.150
+      "decay": 0.200,
+      "sustain": 0.04,
+      "release": 0.100
     }
   },
   "lfo": {
-    "frequency": 5.2,
-    "amount": 12,
+    "frequency": 6.6,
+    "amount": 8,
     "target": "pitch",
     "delay": 400
   },
   "filter": {
     "type": "lowpass",
-    "cutoff": 800,
+    "cutoff": 600,
     "envelopeAmount": 4500,
-    "velocitySensitivity": 0.80,
+    "velocitySensitivity": 0.70,
     "attack": {
-      "time": 60,
+      "time": 150,
       "color": "orange",
       "isAdvanced": true,
-      "points": [{"x": 0, "y": 0}, {"x": 1, "y": 1.0}]
+      "points": [{"x": 0, "y": 0}, {"x": 0.6, "y": 0.4}, {"x": 1, "y": 1.0}]
     },
     "decay": {
-      "time": 800,
+      "time": 2000,
       "color": "purple",
       "isAdvanced": true,
-      "points": [{"x": 0, "y": 1.0}, {"x": 0.5, "y": 0.9}, {"x": 1.0, "y": 0.8}]
+      "points": [{"x": 0, "y": 1.0}, {"x": 1.0, "y": 0.80}]
     }
   },
   "keyTracking": {
-    "centerNote": "B4",
-    "decayScaling": 0.9
+    "centerNote": "A4",
+    "decayScaling": 0.90
   }
 }

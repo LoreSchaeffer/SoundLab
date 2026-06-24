@@ -1,0 +1,76 @@
+{
+  "id": "vibraphone",
+  "name": "Vibraphone",
+  "oscillatorType": "custom",
+  "partials": [],
+  "customRatios": [
+    { "ratio": 1.0000, "amplitude": 1.00 },
+    { "ratio": 1.3160, "amplitude": 0.05 },
+    { "ratio": 2.5790, "amplitude": 0.08 },
+    { "ratio": 2.8950, "amplitude": 0.06 },
+    { "ratio": 3.1050, "amplitude": 0.04 },
+    { "ratio": 4.4210, "amplitude": 0.03 },
+    { "ratio": 4.7890, "amplitude": 0.04 },
+    { "ratio": 9.2110, "amplitude": 0.10 }
+  ],
+  "attack": {
+    "time": 20,
+    "color": "red",
+    "isAdvanced": true,
+    "points": [{"x": 0, "y": 0}, {"x": 0.5, "y": 0.8}, {"x": 1, "y": 1.0}]
+  },
+  "decay": {
+    "time": 15000,
+    "color": "yellow",
+    "isAdvanced": true,
+    "points": [
+      {"x": 0, "y": 1.0},
+      {"x": 1.0, "y": 0.0}
+    ]
+  },
+  "release": {
+    "time": 600,
+    "color": "blue",
+    "isAdvanced": true,
+    "points": [{"x": 0, "y": 1}, {"x": 0.3, "y": 0.3}, {"x": 1, "y": 0}]
+  },
+  "noiseLayer": {
+    "type": "pink",
+    "volume": 0.015,
+    "filterCutoff": 1000,
+    "envelope": {
+      "attack": 0.005,
+      "decay": 0.040,
+      "sustain": 0.0,
+      "release": 0.040
+    }
+  },
+  "lfo": {
+    "frequency": 6.5,
+    "amount": 0.12,
+    "target": "volume",
+    "delay": 0
+  },
+  "filter": {
+    "type": "lowpass",
+    "cutoff": 500,
+    "envelopeAmount": 4000,
+    "velocitySensitivity": 0.75,
+    "attack": {
+      "time": 15,
+      "color": "orange",
+      "isAdvanced": true,
+      "points": [{"x": 0, "y": 0}, {"x": 1, "y": 1.0}]
+    },
+    "decay": {
+      "time": 600,
+      "color": "purple",
+      "isAdvanced": true,
+      "points": [{"x": 0, "y": 1.0}, {"x": 1.0, "y": 0.0}]
+    }
+  },
+  "keyTracking": {
+    "centerNote": "A4",
+    "decayScaling": 0.75
+  }
+}

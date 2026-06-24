@@ -42,7 +42,8 @@
     "guitar": "Chitarra",
     "trumpet": "Tromba",
     "flute": "Flauto",
-    "violin": "Violino"
+    "violin": "Violino",
+    "vibraphone": "Vibrafono"
   },
   "common": {
     "custom_wave": "Personalizzata",
